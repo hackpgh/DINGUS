@@ -1,0 +1,403 @@
+{
+    "Contacts": [
+        {
+            "FirstName": "testFirstName2",
+            "LastName": "testLastname2",
+            "Email": "test@test.com",
+            "DisplayName": "testLastname2, testFirstName2",
+            "Organization": "",
+            "ProfileLastUpdated": "2024-01-12T05:13:20.657-05:00",
+            "FieldValues": [
+                {
+                    "FieldName": "Archived",
+                    "Value": false,
+                    "SystemCode": "IsArchived"
+                },
+                {
+                    "FieldName": "Donor",
+                    "Value": false,
+                    "SystemCode": "IsDonor"
+                },
+                {
+                    "FieldName": "Event registrant",
+                    "Value": false,
+                    "SystemCode": "IsEventAttendee"
+                },
+                {
+                    "FieldName": "Member",
+                    "Value": false,
+                    "SystemCode": "IsMember"
+                },
+                {
+                    "FieldName": "Suspended member",
+                    "Value": false,
+                    "SystemCode": "IsSuspendedMember"
+                },
+                {
+                    "FieldName": "Event announcements",
+                    "Value": true,
+                    "SystemCode": "ReceiveEventReminders"
+                },
+                {
+                    "FieldName": "Member emails and newsletters",
+                    "Value": true,
+                    "SystemCode": "ReceiveNewsletters"
+                },
+                {
+                    "FieldName": "Email delivery disabled",
+                    "Value": false,
+                    "SystemCode": "EmailDisabled"
+                },
+                {
+                    "FieldName": "Email delivery disabled automatically",
+                    "Value": false,
+                    "SystemCode": "EmailingDisabledAutomatically"
+                },
+                {
+                    "FieldName": "Receiving emails disabled",
+                    "Value": false,
+                    "SystemCode": "RecievingEMailsDisabled"
+                },
+                {
+                    "FieldName": "Balance",
+                    "Value": 0.0,
+                    "SystemCode": "Balance"
+                },
+                {
+                    "FieldName": "Total donated",
+                    "Value": 0.0,
+                    "SystemCode": "TotalDonated"
+                },
+                {
+                    "FieldName": "Registered for specific event",
+                    "Value": null,
+                    "SystemCode": "RegistredForEvent"
+                },
+                {
+                    "FieldName": "Profile last updated",
+                    "Value": "2024-01-12T10:13:20.657+00:00",
+                    "SystemCode": "LastUpdated"
+                },
+                {
+                    "FieldName": "Profile last updated by",
+                    "Value": null,
+                    "SystemCode": "LastUpdatedBy"
+                },
+                {
+                    "FieldName": "Creation date",
+                    "Value": "2024-01-12T10:12:10+00:00",
+                    "SystemCode": "CreationDate"
+                },
+                {
+                    "FieldName": "Last login date",
+                    "Value": null,
+                    "SystemCode": "LastLoginDate"
+                },
+                {
+                    "FieldName": "Administrator role",
+                    "Value": [
+                        {
+                            "Id": 256,
+                            "Label": "Account administrator (Full access)"
+                        }
+                    ],
+                    "SystemCode": "AdminRole"
+                },
+                {
+                    "FieldName": "Notes",
+                    "Value": "",
+                    "SystemCode": "Notes"
+                },
+                {
+                    "FieldName": "Terms of use accepted",
+                    "Value": true,
+                    "SystemCode": "SystemRulesAndTermsAccepted"
+                },
+                {
+                    "FieldName": "User ID",
+                    "Value": 72136796,
+                    "SystemCode": "MemberId"
+                },
+                {
+                    "FieldName": "First name",
+                    "Value": "testFirstName2",
+                    "SystemCode": "FirstName"
+                },
+                {
+                    "FieldName": "Last name",
+                    "Value": "testLastname2",
+                    "SystemCode": "LastName"
+                },
+                {
+                    "FieldName": "Organization",
+                    "Value": "",
+                    "SystemCode": "Organization"
+                },
+                {
+                    "FieldName": "Email",
+                    "Value": "test@test.com",
+                    "SystemCode": "Email"
+                },
+                {
+                    "FieldName": "Phone",
+                    "Value": "",
+                    "SystemCode": "Phone"
+                },
+                {
+                    "FieldName": "Privacy Policy",
+                    "Value": false,
+                    "SystemCode": "custom-15913490"
+                }
+            ],
+            "Id": 72136796,
+            "Url": "https://api.wildapricot.org/v2/accounts/458518/Contacts/72136796",
+            "IsAccountAdministrator": true,
+            "TermsOfUseAccepted": true
+        },
+        {
+            "FirstName": "testFirstName",
+            "LastName": "testLastname",
+            "Email": "asdf@asdf.com",
+            "DisplayName": "testLastname, testFirstName",
+            "Organization": "testorg",
+            "ProfileLastUpdated": "2024-01-12T05:15:22.973-05:00",
+            "MembershipLevel": {
+                "Id": 1578461,
+                "Url": "https://api.wildapricot.org/v2/accounts/458518/MembershipLevels/1578461",
+                "Name": "SAMPLE - Regular membership"
+            },
+            "MembershipEnabled": true,
+            "Status": "Active",
+            "FieldValues": [
+                {
+                    "FieldName": "Archived",
+                    "Value": false,
+                    "SystemCode": "IsArchived"
+                },
+                {
+                    "FieldName": "Donor",
+                    "Value": false,
+                    "SystemCode": "IsDonor"
+                },
+                {
+                    "FieldName": "Event registrant",
+                    "Value": false,
+                    "SystemCode": "IsEventAttendee"
+                },
+                {
+                    "FieldName": "Member",
+                    "Value": true,
+                    "SystemCode": "IsMember"
+                },
+                {
+                    "FieldName": "Suspended member",
+                    "Value": false,
+                    "SystemCode": "IsSuspendedMember"
+                },
+                {
+                    "FieldName": "Event announcements",
+                    "Value": true,
+                    "SystemCode": "ReceiveEventReminders"
+                },
+                {
+                    "FieldName": "Member emails and newsletters",
+                    "Value": true,
+                    "SystemCode": "ReceiveNewsletters"
+                },
+                {
+                    "FieldName": "Email delivery disabled",
+                    "Value": false,
+                    "SystemCode": "EmailDisabled"
+                },
+                {
+                    "FieldName": "Email delivery disabled automatically",
+                    "Value": false,
+                    "SystemCode": "EmailingDisabledAutomatically"
+                },
+                {
+                    "FieldName": "Receiving emails disabled",
+                    "Value": false,
+                    "SystemCode": "RecievingEMailsDisabled"
+                },
+                {
+                    "FieldName": "Balance",
+                    "Value": 0.0,
+                    "SystemCode": "Balance"
+                },
+                {
+                    "FieldName": "Total donated",
+                    "Value": 0.0,
+                    "SystemCode": "TotalDonated"
+                },
+                {
+                    "FieldName": "Registered for specific event",
+                    "Value": null,
+                    "SystemCode": "RegistredForEvent"
+                },
+                {
+                    "FieldName": "Profile last updated",
+                    "Value": "2024-01-12T10:1100  6841  100  6841    0     0  70748      0 --:--:-- --:--:-- --:--:-- 72776de": "LastUpdatedBy"
+                },
+                {
+                    "FieldName": "Creation date",
+                    "Value": "2024-01-12T10:14:37+00:00",
+                    "SystemCode": "CreationDate"
+                },
+                {
+                    "FieldName": "Last login date",
+                    "Value": null,
+                    "SystemCode": "LastLoginDate"
+                },
+                {
+                    "FieldName": "Administrator role",
+                    "Value": [],
+                    "SystemCode": "AdminRole"
+                },
+                {
+                    "FieldName": "Notes",
+                    "Value": "Membership approved on 12 Jan 2024 by testAdmin",
+                    "SystemCode": "Notes"
+                },
+                {
+                    "FieldName": "Terms of use accepted",
+                    "Value": false,
+                    "SystemCode": "SystemRulesAndTermsAccepted"
+                },
+                {
+                    "FieldName": "User ID",
+                    "Value": 72136799,
+                    "SystemCode": "MemberId"
+                },
+                {
+                    "FieldName": "First name",
+                    "Value": "testFirstName",
+                    "SystemCode": "FirstName"
+                },
+                {
+                    "FieldName": "Last name",
+                    "Value": "testLastname",
+                    "SystemCode": "LastName"
+                },
+                {
+                    "FieldName": "Organization",
+                    "Value": "testorg",
+                    "SystemCode": "Organization"
+                },
+                {
+                    "FieldName": "Email",
+                    "Value": "asdf@asdf.com",
+                    "SystemCode": "Email"
+                },
+                {
+                    "FieldName": "Phone",
+                    "Value": "1111111111",
+                    "SystemCode": "Phone"
+                },
+                {
+                    "FieldName": "Privacy Policy",
+                    "Value": true,
+                    "SystemCode": "custom-15913490"
+                },
+                {
+                    "FieldName": "Member role",
+                    "Value": null,
+                    "SystemCode": "MemberRole"
+                },
+                {
+                    "FieldName": "Member since",
+                    "Value": "2023-11-05T05:00:00+00:00",
+                    "SystemCode": "MemberSince"
+                },
+                {
+                    "FieldName": "Renewal due",
+                    "Value": "2024-11-05T00:00:00",
+                    "SystemCode": "RenewalDue"
+                },
+                {
+                    "FieldName": "Membership level ID",
+                    "Value": 1578461,
+                    "SystemCode": "MembershipLevelId"
+                },
+                {
+                    "FieldName": "Access to profile by others",
+                    "Value": true,
+                    "SystemCode": "AccessToProfileByOthers"
+                },
+                {
+                    "FieldName": "Renewal date last changed",
+                    "Value": "2024-01-12T10:15:22+00:00",
+                    "SystemCode": "RenewalDateLastChanged"
+                },
+                {
+                    "FieldName": "Level last changed",
+                    "Value": "2024-01-12T10:15:15+00:00",
+                    "SystemCode": "LevelLastChanged"
+                },
+                {
+                    "FieldName": "Bundle ID",
+                    "Value": null,
+                    "SystemCode": "BundleId"
+                },
+                {
+                    "FieldName": "Membership status",
+                    "Value": {
+                        "Id": 1,
+                        "Label": "Active",
+                        "Value": "Active",
+                        "SelectedByDefault": false,
+                        "Position": 0
+                    },
+                    "SystemCode": "Status"
+                },
+                {
+                    "FieldName": "Membership enabled",
+                    "Value": true,
+                    "SystemCode": "MembershipEnabled"
+                },
+                {
+                    "FieldName": "Group participation",
+                    "Value": [],
+                    "SystemCode": "Groups"
+                },
+                {
+                    "FieldName": "Door Key",
+                    "Value": "10125",
+                    "SystemCode": "custom-15913496"
+                },
+                {
+                    "FieldName": "Safety Training",
+                    "Value": [
+                        {
+                            "Id": 20397564,
+                            "Label": "Metal Lathe"
+                        },
+                        {
+                            "Id": 20397565,
+                            "Label": "CNC"
+                        },
+                        {
+                            "Id": 20397566,
+                            "Label": "Embroidery Machine"
+                        }
+                    ],
+                    "SystemCode": "custom-15916280"
+                }
+            ],
+            "Id": 72136799,
+            "Url": "https://api.wildapricot.org/v2/accounts/458518/Contacts/72136799",
+            "IsAccountAdministrator": false,
+            "TermsOfUseAccepted": false
+        }
+    ],
+    "ResultId": "f4c88a68-cf89-4a45-bea4-df062a2dbbe4",
+    "ResultUrl": "https://api.wildapricot.org/v2/accounts/458518/Contacts/?resultId=f4c88a68cf894a45bea4df062a2dbbe4",
+    "Requested": "2024-01-13T06:06:33.119275-05:00",
+    "Processed": "2024-01-13T06:06:33.624267-05:00",
+    "State": "Complete",
+    "InitialQuery": {
+        "ObjectType": "Contact",
+        "FilterExpression": null,
+        "SelectExpression": null,
+        "ReturnIds": false
+    }
+}

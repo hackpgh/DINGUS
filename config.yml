@@ -1,0 +1,7 @@
+cert_file: "path/to/your/cert.pem"
+key_file: "path/to/your/key.pem"
+database_path: "file:tagsdb.sqlite?cache=shared&mode=rwc"
+contact_rfid_cache_file_path: "/path/to/contact/rfid/cache/file"
+wild_apricot_account_id: 12345
+rfid_field_name: "Door Key"
+training_field_name: "Safety Training" # Wild Apricot FieldName for a list of machines (string) that require safety training
