@@ -3,10 +3,9 @@ package services
 const (
 	// GetRFIDsForMachineQuery retrieves RFID tags for a specific machine
 	GetRFIDsForMachineQuery = `
-        SELECT m.tag_id
-        FROM members_trainings_link mtl
-        JOIN trainings t ON mtl.training_name = t.training_name
-        WHERE t.training_name = ?;
+        SELECT tag_id
+        FROM members_trainings_link
+        WHERE training_name = ?;
     `
 
 	// GetAllRFIDsQuery retrieves all RFID tags
