@@ -1,0 +1,5 @@
+# Ignore SQLite database file
+*.sqlite
+
+# Ignore PEM files (private keys, certificates, etc.)
+*.pem

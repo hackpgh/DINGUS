@@ -1,0 +1,6 @@
+cert_file: ".ssh/id_rsa/dev_pubkey.pem" # Change for prod
+key_file: ".ssh/id_rsa/dev_secret.pem" #Change for prod
+database_path: "db/data/tagsdb.sqlite"
+wild_apricot_account_id: 12345 #Change for prod
+rfid_field_name: "Door Key"
+training_field_name: "Safety Training" # Wild Apricot FieldName for a list of machines (string) that require safety training

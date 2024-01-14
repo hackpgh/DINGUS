@@ -38,12 +38,19 @@ package main
 import (
 	"log"
 	"net/http"
+	"path/filepath"
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
 	"rfid-backend/services"
+	"runtime"
 	"time"
 )
+
+func getCurrentDirectory() string {
+	_, b, _, _ := runtime.Caller(0)
+	return filepath.Dir(b)
+}
 
 func main() {
 	cfg := config.LoadConfig()
@@ -71,6 +78,8 @@ func main() {
 	}()
 
 	log.Println("Starting HTTPS server on :443...")
+	log.Printf("certfile: %+v\n", cfg.CertFile)
+	log.Printf("keyfile: %+v\n", cfg.KeyFile)
 	err = http.ListenAndServeTLS(":443", cfg.CertFile, cfg.KeyFile, nil)
 	if err != nil {
 		log.Fatalf("Failed to start HTTPS server: %v", err)

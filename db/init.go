@@ -2,10 +2,14 @@ package db
 
 import (
 	"database/sql"
-	"io/ioutil"
+	"embed"
+	"io/fs"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+//go:embed schema/tagsdb.sql
+var schemaFS embed.FS
 
 func InitDB(dataSourceName string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dataSourceName)
@@ -13,12 +17,12 @@ func InitDB(dataSourceName string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	schema, err := ioutil.ReadFile("./schema/tagsdb.sql") //should we make this configurable in config.yml?
+	schemaFile, err := fs.ReadFile(schemaFS, "schema/tagsdb.sql")
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.Exec(string(schema))
+	_, err = db.Exec(string(schemaFile))
 	if err != nil {
 		return nil, err
 	}
