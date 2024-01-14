@@ -60,6 +60,7 @@ The server will start listening for requests on port 443 and periodically update
 
 ## Endpoints
 
+-   `/`: Update Configuration web UI. Server reboot required for changes to take effect.
 -   `/api/machineCache`: Returns RFID tags for a specified machine.
 -   `/api/doorCache`: Returns all RFID tags for door access.
 
