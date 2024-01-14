@@ -38,19 +38,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"path/filepath"
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
 	"rfid-backend/services"
-	"runtime"
 	"time"
 )
-
-func getCurrentDirectory() string {
-	_, b, _, _ := runtime.Caller(0)
-	return filepath.Dir(b)
-}
 
 func main() {
 	cfg := config.LoadConfig()
@@ -66,6 +59,17 @@ func main() {
 
 	cacheHandler := handlers.NewCacheHandler(dbService, cfg)
 
+	configHandler := handlers.NewConfigHandler()
+
+	// Configuration web-ui endpoint
+	// Add auth level restriction that allows access to members only if they have sufficient membership level
+	http.Handle("/", http.FileServer(http.Dir("web-ui")))
+
+	// Configuration management endpoints
+	http.HandleFunc("/api/getConfig", configHandler.GetConfig)
+	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
+
+	// Auth system endpoints
 	http.HandleFunc("/api/machineCache", cacheHandler.HandleMachineCacheRequest())
 	http.HandleFunc("/api/doorCache", cacheHandler.HandleDoorCacheRequest())
 
@@ -78,8 +82,6 @@ func main() {
 	}()
 
 	log.Println("Starting HTTPS server on :443...")
-	log.Printf("certfile: %+v\n", cfg.CertFile)
-	log.Printf("keyfile: %+v\n", cfg.KeyFile)
 	err = http.ListenAndServeTLS(":443", cfg.CertFile, cfg.KeyFile, nil)
 	if err != nil {
 		log.Fatalf("Failed to start HTTPS server: %v", err)
