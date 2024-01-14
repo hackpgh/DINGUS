@@ -47,7 +47,6 @@ func TestGetRFIDsForMachine(t *testing.T) {
 		AddRow(12345).
 		AddRow(67890)
 
-	// Simplified and more flexible regular expression
 	mock.ExpectQuery("SELECT m.tag_id FROM members_trainings_link").
 		WithArgs("MachineA").
 		WillReturnRows(rows)
@@ -57,7 +56,7 @@ func TestGetRFIDsForMachine(t *testing.T) {
 	tags, err := dbService.GetRFIDsForMachine("MachineA")
 
 	assert.NoError(t, err)
-	if assert.Len(t, tags, 2) { // This check will prevent the panic by ensuring there are two elements
+	if assert.Len(t, tags, 2) {
 		assert.Equal(t, uint32(12345), tags[0])
 		assert.Equal(t, uint32(67890), tags[1])
 	}
