@@ -32,7 +32,7 @@ Thank you for considering contributing to HackPGH'S RFID Backend Server! We welc
 
 ## Reporting Issues
 
-Be excellent to each other. If you encounter any bugs, have questions, or want to suggest improvements, please open an issue on the [issue tracker](https://github.com/your-username/rfid-backend/issues).
+Be excellent to each other. If you encounter any bugs, have questions, or want to suggest improvements, please open an issue on the [issue tracker](https://github.com/hackpgh/rfid-backend/issues).
 
 ## License
 
