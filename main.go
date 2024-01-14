@@ -62,7 +62,7 @@ func main() {
 	configHandler := handlers.NewConfigHandler()
 
 	// Configuration web-ui endpoint
-	// Add auth level restriction that allows access to members only if they have sufficient membership level
+	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
 	http.Handle("/", http.FileServer(http.Dir("web-ui")))
 
 	// Configuration management endpoints
