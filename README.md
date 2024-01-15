@@ -3,11 +3,11 @@
 
 ## Overview
 
-The RFID Backend Server is a work in progress designed for HackPGH's magnetic lock and machine access control system. It integrates with the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api) to fetch [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) and utilizes a local SQLite database to manage RFID tags and training information.
+The RFID Backend Server is a work in progress designed for HackPGH's magnetic lock and machine access control system. It interfaces with the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api) to fetch [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) and utilizes a local SQLite database to manage RFID tags and training information.
 
 ## Features
 
--   **Wild Apricot Integration:** Fetches contact data from the Wild Apricot API.
+-   **Wild Apricot Support:** Fetches contact data from the Wild Apricot API.
 -   **SQLite Database:** Manages RFID tags and training data.
 -   **Automated Synchronization:** Regularly updates the database with the latest API data.
 -   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
@@ -35,7 +35,7 @@ The RFID Backend Server is a work in progress designed for HackPGH's magnetic lo
 
 ### Setting up GCC
 
-Before you can build and run this project, make sure you have GCC installed on your system. You can typically install GCC on Linux-based systems using package managers like `apt-get` (for Debian/Ubuntu) or `yum` (for CentOS/RHEL). For macOS, you can use Homebrew to install GCC. MinGW-w64 is recommended for Windows.
+Before you can build and run this project, make sure you have GCC installed on your system. You can typically install GCC on Linux-based systems using package managers like `apt-get` (for Debian/Ubuntu) or `yum` (for CentOS/RHEL). For macOS, you can use Homebrew. MinGW-w64 is recommended for Windows.
 
 ### Setting the `CGO_ENABLED` Environment Variable
 
