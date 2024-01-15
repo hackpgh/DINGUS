@@ -3,7 +3,6 @@ module rfid-backend
 go 1.20
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
