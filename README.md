@@ -41,7 +41,7 @@ Before you can build and run this project, make sure you have GCC installed on y
 
 To build and run this project successfully, you need to set the `CGO_ENABLED` environment variable to `1`.
 
-You can set `CGO_ENABLED` temporarily in your terminal before running the following command:
+You can set `CGO_ENABLED` temporarily in your terminal by running the following command:
 #### Bash command
 
 `export CGO_ENABLED=1` 
