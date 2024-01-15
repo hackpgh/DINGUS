@@ -39,7 +39,7 @@ Before you can build and run this project, make sure you have GCC installed on y
 
 ### Setting the `CGO_ENABLED` Environment Variable
 
-To build and run this project successfully, you need to set the `CGO_ENABLED` environment variable to `1`. This enables cgo support in Go, which is necessary for building the SQLite packages.
+To build and run this project successfully, you need to set the `CGO_ENABLED` environment variable to `1`.
 
 You can set `CGO_ENABLED` temporarily in your terminal before running the Go commands:
 #### Bash command
