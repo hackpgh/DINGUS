@@ -67,8 +67,8 @@ The server will start listening for requests on port 443 and periodically update
 
 ## Contributing
 
-Contributions to improve the RFID Backend Server are welcome. Please follow the standard pull request process for your contributions.
+Contributions to improve the RFID Backend Server are welcome. Please follow the [standard pull request process](CONTRIBUTING.md) for your contributions.
 
 ## License
 
-MIT License
+[MIT License](LICENSE)
