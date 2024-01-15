@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"rfid-backend/utils"
@@ -15,13 +17,13 @@ var (
 )
 
 type Config struct {
-	CertFile             string `yaml:"cert_file" json:"cert_file"`
-	KeyFile              string `yaml:"key_file" json:"key_file"`
-	DatabasePath         string `yaml:"database_path" json:"database_path"`
-	WildApricotAccountId int    `yaml:"wild_apricot_account_id" json:"wild_apricot_account_id"`
-	ContactFilterQuery   string `yaml:"contact_filter_query" json:"contact_filter_query"`
-	RFIDFieldName        string `yaml:"rfid_field_name" json:"rfid_field_name"`
-	TrainingFieldName    string `yaml:"training_field_name" json:"training_field_name"`
+	CertFile             string `mapstructure:"cert_file" json:"cert_file"`
+	DatabasePath         string `mapstructure:"database_path" json:"database_path"`
+	KeyFile              string `mapstructure:"key_file" json:"key_file"`
+	RFIDFieldName        string `mapstructure:"rfid_field_name" json:"rfid_field_name"`
+	TrainingFieldName    string `mapstructure:"training_field_name" json:"training_field_name"`
+	WildApricotAccountId int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
+	ContactFilterQuery   string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
 }
 
 func init() {
@@ -34,7 +36,6 @@ func LoadConfig() *Config {
 	return config.Get(loadConfig).(*Config)
 }
 
-// loadConfig is the internal function used to load the configuration settings.
 func loadConfig() interface{} {
 	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
@@ -49,18 +50,23 @@ func loadConfig() interface{} {
 		log.Fatalf("Error reading config file: %s", err)
 	}
 
-	configMap := viper.AllSettings()
-	cfg := &Config{
-		CertFile:             configMap["cert_file"].(string),
-		KeyFile:              configMap["key_file"].(string),
-		DatabasePath:         configMap["database_path"].(string),
-		WildApricotAccountId: configMap["wild_apricot_account_id"].(int),
-		ContactFilterQuery:   configMap["contact_filter_query"].(string),
-		RFIDFieldName:        configMap["rfid_field_name"].(string),
-		TrainingFieldName:    configMap["training_field_name"].(string),
+	var cfg Config
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Fatalf("Error unmarshalling config file: %s", err)
 	}
 
-	return cfg
+	// Resolve relative paths
+	cfg.CertFile = filepath.Join(projectRoot, cfg.CertFile)
+	if _, err := os.Stat(cfg.CertFile); os.IsNotExist(err) {
+		log.Fatalf("Certificate file not found: %s", cfg.CertFile)
+	}
+
+	cfg.KeyFile = filepath.Join(projectRoot, cfg.KeyFile)
+	if _, err := os.Stat(cfg.KeyFile); os.IsNotExist(err) {
+		log.Fatalf("Key file not found: %s", cfg.KeyFile)
+	}
+
+	return &cfg
 }
 
 // UpdateConfigFile updates the configuration settings based on the provided newConfig.
@@ -70,15 +76,15 @@ func UpdateConfigFile(newConfig Config) {
 		log.Fatalf("Error fetching project root absolute path: %s", err)
 	}
 
-	// Reload the config file to refresh Viper's internal state
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(projectRoot)
 
-	log.Printf("newConfig: %v", newConfig)
+	log.Printf("Attempting to read existing config for update")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file: %s", err)
 	}
+
 	// Update viper's settings only if the newConfig fields are not empty
 	if newConfig.CertFile != "" {
 		viper.Set("cert_file", newConfig.CertFile)

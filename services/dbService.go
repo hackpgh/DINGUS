@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"rfid-backend/config"
 	"rfid-backend/models"
 	"strconv"
@@ -89,33 +90,56 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 }
 
 func (s *DBService) extractContactData(contact models.Contact) (uint32, []string, error) {
-	var rfid uint32
+	var converted_rfid uint32
 	var trainingLabels []string
 
 	for _, fieldValue := range contact.FieldValues {
 		switch fieldValue.FieldName {
 		case s.cfg.RFIDFieldName:
-			if rfidStr, ok := fieldValue.Value.(string); ok {
-				rfidVal, err := strconv.ParseUint(rfidStr, 10, 32)
-				if err != nil {
-					return 0, nil, err
-				}
-				rfid = uint32(rfidVal)
+			rfid, err := strconv.ParseInt(fieldValue.Value.(string), 10, 32)
+			if err != nil {
+				log.Print("Failed to convert string rfid to int")
+			}
+
+			if rfid > 0 {
+				converted_rfid = uint32(rfid)
 			} else {
-				return 0, nil, errors.New("RFID value is not a string")
+				return 0, nil, errors.New("RFID value is not an int")
 			}
 		case s.cfg.TrainingFieldName:
-			if trainings, ok := fieldValue.Value.([]models.SafetyTraining); ok {
-				for _, training := range trainings {
-					trainingLabels = append(trainingLabels, training.Label)
+			trainingValues, ok := fieldValue.Value.([]interface{})
+			if !ok {
+				return 0, nil, errors.New("Training value is not a slice")
+			}
+
+			for _, t := range trainingValues {
+				trainingMap, ok := t.(map[string]interface{})
+				if !ok {
+					return 0, nil, errors.New("Training item is not a map")
 				}
-			} else {
-				return 0, nil, errors.New("Training value is not a slice of SafetyTraining")
+
+				// Assuming 'Id' and 'Label' are the keys in the map
+				trainingId, ok := trainingMap["Id"].(float64)
+				if !ok {
+					return 0, nil, errors.New("Training Id is not a float64")
+				}
+
+				trainingLabel, ok := trainingMap["Label"].(string)
+				if !ok {
+					return 0, nil, errors.New("Training Label is not a string")
+				}
+
+				training := models.SafetyTraining{
+					Id:    int(trainingId),
+					Label: trainingLabel,
+				}
+
+				trainingLabels = append(trainingLabels, training.Label)
 			}
 		}
 	}
 
-	return rfid, trainingLabels, nil
+	return converted_rfid, trainingLabels, nil
 }
 
 func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint32, trainingMap map[string][]uint32) error {
@@ -142,12 +166,19 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint
 func (s *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
+		log.Printf("Error preparing statement: %v", err)
 		return err
 	}
-	defer memberStmt.Close()
+	defer func() {
+		log.Println("Closing memberStmt")
+		memberStmt.Close()
+	}()
+
 	for _, rfid := range allRFIDs {
 		membershipLevel := 1 // Placeholder for actual membership level
+		log.Printf("Executing insertOrUpdate for RFID: %d", rfid)
 		if _, err := memberStmt.Exec(rfid, membershipLevel); err != nil {
+			log.Printf("Error executing insertOrUpdate for RFID %d: %v", rfid, err)
 			return err
 		}
 	}

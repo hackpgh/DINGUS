@@ -3,3 +3,6 @@
 
 # Ignore PEM files (private keys, certificates, etc.)
 *.pem
+
+# Ignore ENV file
+.env

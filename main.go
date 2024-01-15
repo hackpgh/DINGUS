@@ -43,11 +43,21 @@ import (
 	"rfid-backend/handlers"
 	"rfid-backend/services"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	cfg := config.LoadConfig()
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
+	cfg := config.LoadConfig()
+	log.Printf("Certificate File: %s", cfg.CertFile)
+	log.Printf("Key File: %s", cfg.KeyFile)
+	log.Printf("Database Path: %s", cfg.DatabasePath)
 	db, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -77,7 +87,7 @@ func main() {
 	go func() {
 		ticker := time.NewTicker(6 * time.Minute)
 		for range ticker.C {
-			updateDatabaseFromWildApricot(wildApricotSvc, dbService, cfg.WildApricotAccountId)
+			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
 		}
 	}()
 
@@ -88,9 +98,9 @@ func main() {
 	}
 }
 
-func updateDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService, accountId int) {
+func updateDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService) {
 	log.Println("Fetching contacts from Wild Apricot and updating database...")
-	contacts, err := waService.GetContacts(accountId)
+	contacts, err := waService.GetContacts()
 	if err != nil {
 		log.Printf("Failed to fetch contacts: %v", err)
 		return

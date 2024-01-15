@@ -16,24 +16,44 @@ const (
 
 	// SQL statement to insert or update a member
 	InsertOrUpdateMemberQuery = `
-        INSERT INTO members (tag_id, membership_level)
+        INSERT OR IGNORE INTO members (tag_id, membership_level)
         VALUES (?, ?)
         ON CONFLICT(tag_id) DO UPDATE SET membership_level = EXCLUDED.membership_level
     `
 
 	// SQL statement to insert a training name
 	InsertTrainingQuery = `
-        INSERT INTO trainings (training_name)
+        INSERT OR IGNORE INTO trainings (training_name)
         VALUES (?)
-        ON CONFLICT DO NOTHING
     `
 
 	// SQL statement to insert into members_trainings_link
 	InsertMemberTrainingLinkQuery = `
-        INSERT INTO members_trainings_link (tag_id, training_name)
+        INSERT OR IGNORE INTO members_trainings_link (tag_id, training_name)
         VALUES (?, ?)
-        ON CONFLICT DO NOTHING
     `
+
+	// POSTGRES Compatible queries
+	// // SQL statement to insert or update a member
+	// InsertOrUpdateMemberQuery = `
+	//     INSERT INTO members (tag_id, membership_level)
+	//     VALUES (?, ?)
+	//     ON CONFLICT(tag_id) DO UPDATE SET membership_level = EXCLUDED.membership_level
+	// `
+
+	// // SQL statement to insert a training name
+	// InsertTrainingQuery = `
+	//     INSERT INTO trainings (training_name)
+	//     VALUES (?)
+	//     ON CONFLICT DO NOTHING
+	// `
+
+	// // SQL statement to insert into members_trainings_link
+	// InsertMemberTrainingLinkQuery = `
+	//     INSERT INTO members_trainings_link (tag_id, training_name)
+	//     VALUES (?, ?)
+	//     ON CONFLICT DO NOTHING
+	// `
 
 	// SQL statement to delete stale members
 	deleteInactiveMembersQuery = `

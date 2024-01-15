@@ -19,10 +19,12 @@ import (
 // WildApricotService provides functionalities to interact with the Wild Apricot API.
 // It handles the retrieval of contact data and manages API token refresh.
 type WildApricotService struct {
-	Client      *http.Client
-	cfg         *config.Config
-	ApiToken    string
-	TokenExpiry time.Time
+	Client             *http.Client
+	cfg                *config.Config
+	TokenEndpoint      string
+	ApiToken           string
+	WildApricotApiBase string
+	TokenExpiry        time.Time
 }
 
 // wildApricotSvc is a singleton instance of WildApricotService.
@@ -35,7 +37,9 @@ func NewWildApricotService(cfg *config.Config) *WildApricotService {
 			Client: &http.Client{
 				Timeout: time.Second * 30,
 			},
-			cfg: cfg,
+			cfg:                cfg,
+			TokenEndpoint:      "https://oauth.wildapricot.org/auth/token",
+			WildApricotApiBase: "https://api.wildapricot.org/v2/accounts",
 		}
 		log.Println("WildApricotService initialized")
 		return service
@@ -58,10 +62,9 @@ func (s *WildApricotService) refreshApiToken() error {
 		return fmt.Errorf("API key for Wild Apricot is not set in environment variables")
 	}
 
-	url := "https://oauth.wildapricot.org/auth/token"
+	url := s.TokenEndpoint
 	data := "grant_type=client_credentials&scope=auto"
 	encodedApiKey := base64.StdEncoding.EncodeToString([]byte("APIKEY:" + apiKey))
-
 	req, err := http.NewRequest("POST", url, strings.NewReader(data))
 	if err != nil {
 		log.Printf("Error creating token refresh request: %v", err)
@@ -100,17 +103,19 @@ func (s *WildApricotService) refreshApiToken() error {
 	return nil
 }
 
-// GetContacts retrieves contact data from Wild Apricot for the specified account ID.
-func (s *WildApricotService) GetContacts(accountID int) ([]models.Contact, error) {
+// GetContacts retrieves resultId for async Contacts request to Wild Apricot for the specified account ID.
+func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	if err := s.refreshTokenIfNeeded(); err != nil {
 		log.Printf("Error refreshing token: %v", err)
 		return nil, err
 	}
 
-	encodedFilterQuery := url.QueryEscape(s.cfg.ContactFilterQuery)
-	url := fmt.Sprintf("https://api.wildapricot.org/v2/accounts/%d/Contacts?filter=%s", accountID, encodedFilterQuery)
+	contactURL := fmt.Sprintf("%s/%d/Contacts?$filter=%s",
+		s.WildApricotApiBase,
+		s.cfg.WildApricotAccountId,
+		url.QueryEscape(s.cfg.ContactFilterQuery))
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", contactURL, nil)
 	if err != nil {
 		log.Printf("Error creating request for contacts: %v", err)
 		return nil, err
@@ -125,22 +130,33 @@ func (s *WildApricotService) GetContacts(accountID int) ([]models.Contact, error
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusAccepted {
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
+		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusOK {
 		var asyncResponse struct {
-			ResultUrl string `json:"ResultUrl"`
+			ResultId string `json:"ResultId"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&asyncResponse); err != nil {
-			log.Printf("Error decoding async response: %v", err)
+
+		err = json.Unmarshal(respBody, &asyncResponse)
+		if err != nil {
+			log.Printf("Error in GetContacts unmarshalling async response: %v", err)
 			return nil, err
 		}
-		return s.fetchAsyncContacts(asyncResponse.ResultUrl)
+
+		if asyncResponse.ResultId != "" {
+			return s.fetchAsyncContacts(asyncResponse.ResultId)
+		}
 	}
 
 	return s.parseContactsResponse(resp)
 }
 
-// fetchAsyncContacts handles the retrieval of contacts from an async response (WA supports optional async=false request param).
-func (s *WildApricotService) fetchAsyncContacts(resultUrl string) ([]models.Contact, error) {
+// fetchAsyncContacts handles the retrieval of contacts for resultId of async response.
+func (s *WildApricotService) fetchAsyncContacts(resultId string) ([]models.Contact, error) {
 	if err := s.refreshTokenIfNeeded(); err != nil {
 		log.Printf("Error refreshing token for async contacts fetch: %v", err)
 		return nil, err
@@ -148,6 +164,10 @@ func (s *WildApricotService) fetchAsyncContacts(resultUrl string) ([]models.Cont
 
 	maxRetries := 10 // Maximum number of polling attempts
 	for attempt := 0; attempt < maxRetries; attempt++ {
+		resultUrl := fmt.Sprintf("%s/%d/contacts?resultId=%s",
+			s.WildApricotApiBase,
+			s.cfg.WildApricotAccountId,
+			resultId)
 		req, err := http.NewRequest("GET", resultUrl, nil)
 		if err != nil {
 			log.Printf("Error creating request for async contacts: %v", err)
@@ -172,11 +192,10 @@ func (s *WildApricotService) fetchAsyncContacts(resultUrl string) ([]models.Cont
 			log.Println("Waiting for async contacts response, polling...")
 			time.Sleep(5 * time.Second)
 		default:
-			// Handle other unexpected status codes
 			log.Printf("Unexpected status code %d received", resp.StatusCode)
 			return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
 		}
-		resp.Body.Close() // Ensure the response body is closed after each request
+		resp.Body.Close()
 	}
 
 	return nil, fmt.Errorf("max retries reached for async contacts fetch")
@@ -193,6 +212,7 @@ func (s *WildApricotService) parseContactsResponse(resp *http.Response) ([]model
 	var contactsResponse struct {
 		Contacts []models.Contact `json:"Contacts"`
 	}
+
 	if err = json.Unmarshal(body, &contactsResponse); err != nil {
 		log.Printf("Error unmarshalling contacts response: %v", err)
 		return nil, err
