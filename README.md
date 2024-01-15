@@ -17,6 +17,7 @@ The RFID Backend Server is a work in progress designed for HackPGH's magnetic lo
 -   `/config`: Configuration file loading logic.
 -   `/db`: Database initialization and schema management.
 -   `/db/schema`: Database schema files.
+-   `/db/data`: Default `tagsdb.sqlite` destination
 -   `/handlers`: HTTP handlers for server endpoints.
 -   `/models`: Data structures for database entities and API responses.
 -   `/services`: Business logic including API and database operations.
