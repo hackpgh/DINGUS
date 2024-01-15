@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	// Declare a package-level variable for the singleton instance.
-	configSingleton *utils.Singleton
-	once            sync.Once
+	config *utils.Singleton
+	once   sync.Once
 )
 
 type Config struct {
@@ -27,19 +26,24 @@ type Config struct {
 
 func init() {
 	// Initialize the config singleton instance.
-	configSingleton = utils.NewSingleton(loadConfig())
+	config = utils.NewSingleton(loadConfig())
 }
 
 // LoadConfig returns the configuration instance.
 func LoadConfig() *Config {
-	return configSingleton.Get(loadConfig).(*Config)
+	return config.Get(loadConfig).(*Config)
 }
 
 // loadConfig is the internal function used to load the configuration settings.
 func loadConfig() interface{} {
+	projectRoot, err := utils.GetProjectRoot()
+	if err != nil {
+		log.Fatalf("Error fetching project root absolute path: %s", err)
+	}
+
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(projectRoot)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file: %s", err)
@@ -61,10 +65,15 @@ func loadConfig() interface{} {
 
 // UpdateConfigFile updates the configuration settings based on the provided newConfig.
 func UpdateConfigFile(newConfig Config) {
+	projectRoot, err := utils.GetProjectRoot()
+	if err != nil {
+		log.Fatalf("Error fetching project root absolute path: %s", err)
+	}
+
 	// Reload the config file to refresh Viper's internal state
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(projectRoot)
 
 	log.Printf("newConfig: %v", newConfig)
 	if err := viper.ReadInConfig(); err != nil {
@@ -97,7 +106,7 @@ func UpdateConfigFile(newConfig Config) {
 	}
 
 	// Save the new settings back to the config file
-	err := viper.WriteConfig()
+	err = viper.WriteConfig()
 	if err != nil {
 		log.Fatalf("Error writing to config file: %s", err)
 	} else {

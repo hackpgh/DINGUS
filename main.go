@@ -48,14 +48,14 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	database, err := db.InitDB(cfg.DatabasePath)
+	db, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer database.Close()
+	defer db.Close()
 
 	wildApricotSvc := services.NewWildApricotService(cfg)
-	dbService := services.NewDBService(database, cfg)
+	dbService := services.NewDBService(db, cfg)
 
 	cacheHandler := handlers.NewCacheHandler(dbService, cfg)
 

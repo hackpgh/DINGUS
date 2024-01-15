@@ -53,8 +53,8 @@ func (s *DBService) fetchRFIDs(query string, args ...interface{}) ([]uint32, err
 }
 
 // service starts with this func
-func (service *DBService) ProcessContactsData(contacts []models.Contact) error {
-	tx, err := service.db.Begin()
+func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (service *DBService) ProcessContactsData(contacts []models.Contact) error {
 	trainingMap := make(map[string][]uint32)
 
 	for _, contact := range contacts {
-		rfid, trainingLabels, err := service.extractContactData(contact)
+		rfid, trainingLabels, err := s.extractContactData(contact)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -80,7 +80,7 @@ func (service *DBService) ProcessContactsData(contacts []models.Contact) error {
 	}
 
 	// Perform database operations with extracted data
-	if err := service.processDatabaseUpdatesAndDeletes(tx, allRFIDs, trainingMap); err != nil {
+	if err := s.processDatabaseUpdatesAndDeletes(tx, allRFIDs, trainingMap); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -88,13 +88,13 @@ func (service *DBService) ProcessContactsData(contacts []models.Contact) error {
 	return tx.Commit()
 }
 
-func (service *DBService) extractContactData(contact models.Contact) (uint32, []string, error) {
+func (s *DBService) extractContactData(contact models.Contact) (uint32, []string, error) {
 	var rfid uint32
 	var trainingLabels []string
 
 	for _, fieldValue := range contact.FieldValues {
 		switch fieldValue.FieldName {
-		case service.cfg.RFIDFieldName:
+		case s.cfg.RFIDFieldName:
 			if rfidStr, ok := fieldValue.Value.(string); ok {
 				rfidVal, err := strconv.ParseUint(rfidStr, 10, 32)
 				if err != nil {
@@ -104,7 +104,7 @@ func (service *DBService) extractContactData(contact models.Contact) (uint32, []
 			} else {
 				return 0, nil, errors.New("RFID value is not a string")
 			}
-		case service.cfg.TrainingFieldName:
+		case s.cfg.TrainingFieldName:
 			if trainings, ok := fieldValue.Value.([]models.SafetyTraining); ok {
 				for _, training := range trainings {
 					trainingLabels = append(trainingLabels, training.Label)
@@ -118,28 +118,28 @@ func (service *DBService) extractContactData(contact models.Contact) (uint32, []
 	return rfid, trainingLabels, nil
 }
 
-func (service *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint32, trainingMap map[string][]uint32) error {
-	if err := service.insertOrUpdateMembers(tx, allRFIDs); err != nil {
+func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint32, trainingMap map[string][]uint32) error {
+	if err := s.insertOrUpdateMembers(tx, allRFIDs); err != nil {
 		return err
 	}
 
-	if err := service.insertTrainings(tx, trainingMap); err != nil {
+	if err := s.insertTrainings(tx, trainingMap); err != nil {
 		return err
 	}
 
-	if err := service.manageMemberTrainingLinks(tx, trainingMap); err != nil {
+	if err := s.manageMemberTrainingLinks(tx, trainingMap); err != nil {
 		return err
 	}
 
 	// Prune inactive members
-	if err := service.deleteInactiveMembers(tx, allRFIDs); err != nil {
+	if err := s.deleteInactiveMembers(tx, allRFIDs); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (service *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
+func (s *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
 		return err
@@ -154,7 +154,7 @@ func (service *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) e
 	return nil
 }
 
-func (service *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32) error {
+func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32) error {
 	trainingStmt, err := tx.Prepare(InsertTrainingQuery)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (service *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]u
 	return nil
 }
 
-func (service *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string][]uint32) error {
+func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string][]uint32) error {
 	linkStmt, err := tx.Prepare(InsertMemberTrainingLinkQuery)
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func (service *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[
 	return nil
 }
 
-func (service *DBService) deleteInactiveMembers(tx *sql.Tx, allRFIDs []uint32) error {
+func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allRFIDs []uint32) error {
 	// Convert allRFIDs to a string slice for query
 	var params []string
 	for _, rfid := range allRFIDs {
