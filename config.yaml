@@ -4,3 +4,4 @@ key_file: .ssh/id_rsa/dev_secret.pem
 rfid_field_name: Door Key
 training_field_name: Safety Training
 wild_apricot_account_id: 12345
+contact_filter_query: status eq Active or status eq 'Pending - Renewal

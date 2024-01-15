@@ -54,7 +54,7 @@ func main() {
 	}
 	defer database.Close()
 
-	wildApricotSvc := services.NewWildApricotService(database)
+	wildApricotSvc := services.NewWildApricotService(cfg)
 	dbService := services.NewDBService(database, cfg)
 
 	cacheHandler := handlers.NewCacheHandler(dbService, cfg)

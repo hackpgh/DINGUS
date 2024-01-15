@@ -65,11 +65,15 @@
             
             <label for="keyFile">Key File Path:</label>
             <input type="text" id="keyFile" placeholder="e.g., /path/to/key.pem"><br>
+            
             <label for="databasePath">Database Path:</label>
             <input type="text" id="databasePath" placeholder="e.g., /path/to/database.sqlite"><br>
             
             <label for="wildApricotAccountId">Wild Apricot Account ID:</label>
             <input type="text" id="wildApricotAccountId" placeholder="e.g., 123456"><br>
+
+            <label for="contactFilterQuery">Wild Apricot Contact Filter Query:</label>
+            <input type="text" id="contactFilterQuery" placeholder="e.g., status eq Active or status eq 'Pending - Renewal"><br>
             
             <label for="rfidFieldName">RFID Field Name:</label>
             <input type="text" id="rfidFieldName" placeholder="e.g., Door Key"><br>
@@ -98,6 +102,7 @@
                 key_file: document.getElementById('keyFile').value,
                 database_path: document.getElementById('databasePath').value,
                 wild_apricot_account_id: accountId,
+                contact_filter_query: document.getElementById('contactFilterQuery').value,
                 rfid_field_name: document.getElementById('rfidFieldName').value,
                 training_field_name: document.getElementById('trainingFieldName').value
             };

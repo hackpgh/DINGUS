@@ -20,6 +20,7 @@ type Config struct {
 	KeyFile              string `yaml:"key_file" json:"key_file"`
 	DatabasePath         string `yaml:"database_path" json:"database_path"`
 	WildApricotAccountId int    `yaml:"wild_apricot_account_id" json:"wild_apricot_account_id"`
+	ContactFilterQuery   string `yaml:"contact_filter_query" json:"contact_filter_query"`
 	RFIDFieldName        string `yaml:"rfid_field_name" json:"rfid_field_name"`
 	TrainingFieldName    string `yaml:"training_field_name" json:"training_field_name"`
 }
@@ -50,6 +51,7 @@ func loadConfig() interface{} {
 		KeyFile:              configMap["key_file"].(string),
 		DatabasePath:         configMap["database_path"].(string),
 		WildApricotAccountId: configMap["wild_apricot_account_id"].(int),
+		ContactFilterQuery:   configMap["contact_filter_query"].(string),
 		RFIDFieldName:        configMap["rfid_field_name"].(string),
 		TrainingFieldName:    configMap["training_field_name"].(string),
 	}
@@ -81,6 +83,10 @@ func UpdateConfigFile(newConfig Config) {
 
 	if newConfig.WildApricotAccountId != 0 {
 		viper.Set("wild_apricot_account_id", newConfig.WildApricotAccountId)
+
+	}
+	if newConfig.WildApricotAccountId != 0 {
+		viper.Set("contact_filter_query", newConfig.ContactFilterQuery)
 
 	}
 	if newConfig.RFIDFieldName != "" {

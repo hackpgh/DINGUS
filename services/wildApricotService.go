@@ -1,14 +1,15 @@
 package services
 
 import (
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"rfid-backend/config"
 	"rfid-backend/models"
 	"rfid-backend/utils"
 	"strings"
@@ -19,6 +20,7 @@ import (
 // It handles the retrieval of contact data and manages API token refresh.
 type WildApricotService struct {
 	Client      *http.Client
+	cfg         *config.Config
 	ApiToken    string
 	TokenExpiry time.Time
 }
@@ -27,13 +29,13 @@ type WildApricotService struct {
 var wildApricotSvc = utils.NewSingleton(&WildApricotService{})
 
 // NewWildApricotService initializes and retrieves a singleton instance of WildApricotService.
-// It requires a database connection as a dependency.
-func NewWildApricotService(database *sql.DB) *WildApricotService {
+func NewWildApricotService(cfg *config.Config) *WildApricotService {
 	return wildApricotSvc.Get(func() interface{} {
 		service := &WildApricotService{
 			Client: &http.Client{
 				Timeout: time.Second * 30,
 			},
+			cfg: cfg,
 		}
 		log.Println("WildApricotService initialized")
 		return service
@@ -105,7 +107,9 @@ func (s *WildApricotService) GetContacts(accountID int) ([]models.Contact, error
 		return nil, err
 	}
 
-	url := fmt.Sprintf("https://api.wildapricot.org/v2/accounts/%d/Contacts", accountID)
+	encodedFilterQuery := url.QueryEscape(s.cfg.ContactFilterQuery)
+	url := fmt.Sprintf("https://api.wildapricot.org/v2/accounts/%d/Contacts?filter=%s", accountID, encodedFilterQuery)
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Printf("Error creating request for contacts: %v", err)
