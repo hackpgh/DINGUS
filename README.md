@@ -3,7 +3,7 @@
 
 ## Overview
 
-The RFID Backend Server is a work in progress designed for HackPGH's magnetic lock and machine access control system. It integrates with the Wild Apricot API to fetch contact data and utilizes a local SQLite database to manage RFID tags and training information.
+The RFID Backend Server is a work in progress designed for HackPGH's magnetic lock and machine access control system. It integrates with the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api) to fetch [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) and utilizes a local SQLite database to manage RFID tags and training information.
 
 ## Features
 
