@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"embed"
 	"io/fs"
-	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -13,7 +12,6 @@ import (
 var schemaFS embed.FS
 
 func InitDB(dataSourceName string) (*sql.DB, error) {
-	log.Printf("dataSourceName: %s", dataSourceName)
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return nil, err

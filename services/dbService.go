@@ -176,7 +176,6 @@ func (s *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
 
 	for _, rfid := range allRFIDs {
 		membershipLevel := 1 // Placeholder for actual membership level
-		log.Printf("Executing insertOrUpdate for RFID: %d", rfid)
 		if _, err := memberStmt.Exec(rfid, membershipLevel); err != nil {
 			log.Printf("Error executing insertOrUpdate for RFID %d: %v", rfid, err)
 			return err
