@@ -21,12 +21,10 @@ func NewDBService(db *sql.DB, cfg *config.Config) *DBService {
 }
 
 func (s *DBService) GetRFIDsForMachine(machineName string) ([]uint32, error) {
-	// Fetching link table rows using the helper function
 	return s.fetchRFIDs(GetRFIDsForMachineQuery, machineName)
 }
 
 func (s *DBService) GetAllRFIDs() ([]uint32, error) {
-	// Fetching all RFID tags using the helper function
 	return s.fetchRFIDs(GetAllRFIDsQuery)
 }
 
@@ -34,7 +32,6 @@ func (s *DBService) GetAllRFIDs() ([]uint32, error) {
 func (s *DBService) fetchRFIDs(query string, args ...interface{}) ([]uint32, error) {
 	var rfids []uint32
 
-	// Execute the query
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -55,91 +52,115 @@ func (s *DBService) fetchRFIDs(query string, args ...interface{}) ([]uint32, err
 
 // service starts with this func
 func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
-
-	// Initialize RFID slice and training map
 	var allRFIDs []uint32
 	trainingMap := make(map[string][]uint32)
 
 	for _, contact := range contacts {
 		rfid, trainingLabels, err := s.extractContactData(contact)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
-		// Add RFID to the slice
 		allRFIDs = append(allRFIDs, rfid)
 
-		// Process training labels
 		for _, label := range trainingLabels {
 			trainingMap[label] = append(trainingMap[label], rfid)
 		}
 	}
 
+	// Guard against empty WA contacts responses which is the
+	// typical first response from WA API when WA async
+	// resultId is refreshing
+	if len(allRFIDs) <= 0 {
+		return errors.New("allRFIDs list, parsed from Wild Apricot, was empty")
+	}
+
 	// Perform database operations with extracted data
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
 	if err := s.processDatabaseUpdatesAndDeletes(tx, allRFIDs, trainingMap); err != nil {
 		tx.Rollback()
 		return err
 	}
-
 	return tx.Commit()
 }
 
 func (s *DBService) extractContactData(contact models.Contact) (uint32, []string, error) {
-	var converted_rfid uint32
+	var convertedRfid uint32
 	var trainingLabels []string
 
 	for _, fieldValue := range contact.FieldValues {
 		switch fieldValue.FieldName {
 		case s.cfg.RFIDFieldName:
-			rfid, err := strconv.ParseInt(fieldValue.Value.(string), 10, 32)
+			rfid, err := s.parseRFID(fieldValue)
 			if err != nil {
-				log.Print("Failed to convert string rfid to int")
+				return 0, nil, fmt.Errorf("error parsing RFID for contact %d: %v", contact.Id, err)
 			}
+			convertedRfid = rfid
 
-			if rfid > 0 {
-				converted_rfid = uint32(rfid)
-			} else {
-				return 0, nil, errors.New("RFID value is not an int")
-			}
 		case s.cfg.TrainingFieldName:
-			trainingValues, ok := fieldValue.Value.([]interface{})
-			if !ok {
-				return 0, nil, errors.New("Training value is not a slice")
+			labels, err := s.parseTrainingLabels(fieldValue)
+			if err != nil {
+				return 0, nil, fmt.Errorf("error parsing training labels for contact %d: %v", contact.Id, err)
 			}
-
-			for _, t := range trainingValues {
-				trainingMap, ok := t.(map[string]interface{})
-				if !ok {
-					return 0, nil, errors.New("Training item is not a map")
-				}
-
-				// Assuming 'Id' and 'Label' are the keys in the map
-				trainingId, ok := trainingMap["Id"].(float64)
-				if !ok {
-					return 0, nil, errors.New("Training Id is not a float64")
-				}
-
-				trainingLabel, ok := trainingMap["Label"].(string)
-				if !ok {
-					return 0, nil, errors.New("Training Label is not a string")
-				}
-
-				training := models.SafetyTraining{
-					Id:    int(trainingId),
-					Label: trainingLabel,
-				}
-
-				trainingLabels = append(trainingLabels, training.Label)
-			}
+			trainingLabels = append(trainingLabels, labels...)
 		}
 	}
 
-	return converted_rfid, trainingLabels, nil
+	return convertedRfid, trainingLabels, nil
+}
+
+func (s *DBService) parseRFID(fieldValue models.FieldValue) (uint32, error) {
+	rfidValue, ok := fieldValue.Value.(string)
+	if !ok {
+		return 0, errors.New("RFID value is not a string")
+	}
+
+	rfid, err := strconv.ParseInt(rfidValue, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert string RFID to int: %v", err)
+	}
+
+	if rfid <= 0 {
+		return 0, errors.New("RFID value is non-positive")
+	}
+
+	return uint32(rfid), nil
+}
+
+func (s *DBService) parseTrainingLabels(fieldValue models.FieldValue) ([]string, error) {
+	trainingValues, ok := fieldValue.Value.([]interface{})
+	if !ok {
+		return nil, errors.New("training value is not a slice")
+	}
+
+	var labels []string
+	for _, t := range trainingValues {
+		trainingMap, ok := t.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("training item is not a map")
+		}
+
+		label, err := s.extractLabelFromTrainingMap(trainingMap)
+		if err != nil {
+			return nil, err
+		}
+		labels = append(labels, label)
+	}
+
+	return labels, nil
+}
+
+func (s *DBService) extractLabelFromTrainingMap(trainingMap map[string]interface{}) (string, error) {
+	label, ok := trainingMap["Label"].(string)
+	if !ok {
+		return "", errors.New("training label is not a string")
+	}
+
+	return label, nil
 }
 
 func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint32, trainingMap map[string][]uint32) error {
@@ -155,11 +176,11 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint
 		return err
 	}
 
-	// Prune inactive members
 	if err := s.deleteInactiveMembers(tx, allRFIDs); err != nil {
 		return err
 	}
 
+	// Database transactions successful, no errors
 	return nil
 }
 
@@ -170,7 +191,6 @@ func (s *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
 		return err
 	}
 	defer func() {
-		log.Println("Closing memberStmt")
 		memberStmt.Close()
 	}()
 

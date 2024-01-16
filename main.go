@@ -79,13 +79,13 @@ func main() {
 	http.HandleFunc("/api/getConfig", configHandler.GetConfig)
 	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
 
-	// Auth system endpoints
+	// Access Control system tags data endpoints for rfid readers' cache
 	http.HandleFunc("/api/machineCache", cacheHandler.HandleMachineCacheRequest())
 	http.HandleFunc("/api/doorCache", cacheHandler.HandleDoorCacheRequest())
 
 	// Start background task to fetch contacts and update the database
 	go func() {
-		ticker := time.NewTicker(6 * time.Minute)
+		ticker := time.NewTicker(25 * time.Second)
 		for range ticker.C {
 			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
 		}
@@ -106,10 +106,16 @@ func updateDatabaseFromWildApricot(waService *services.WildApricotService, dbSer
 		return
 	}
 
-	if err = dbService.ProcessContactsData(contacts); err != nil {
-		log.Printf("Failed to update database: %v", err)
+	if len(contacts) <= 0 {
+		log.Println("No contacts to process from Wild Apricot. Sleeping...")
 		return
 	}
 
-	log.Println("Database successfully updated with latest WA contact data.")
+	if err = dbService.ProcessContactsData(contacts); err != nil {
+		log.Printf("Failed to update database: %v", err)
+		return
+	} else {
+		log.Println("Latest Wild Apricot contacts successfully processed.")
+	}
+
 }

@@ -110,7 +110,7 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 		return nil, err
 	}
 
-	contactURL := fmt.Sprintf("%s/%d/Contacts?$filter=%s",
+	contactURL := fmt.Sprintf("%s/%d/Contacts?$async=false&$filter=%s",
 		s.WildApricotApiBase,
 		s.cfg.WildApricotAccountId,
 		url.QueryEscape(s.cfg.ContactFilterQuery))
@@ -125,80 +125,26 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		log.Printf("Error making request to WildApricot API: %v", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading response body: %v", err)
+		log.Printf("Error during async contacts fetch: %v", err)
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusOK {
-		var asyncResponse struct {
-			ResultId string `json:"ResultId"`
-		}
-
-		err = json.Unmarshal(respBody, &asyncResponse)
-		if err != nil {
-			log.Printf("Error in GetContacts unmarshalling async response: %v", err)
-			return nil, err
-		}
-
-		if asyncResponse.ResultId != "" {
-			return s.fetchAsyncContacts(asyncResponse.ResultId)
-		}
+	// Handling different status codes
+	switch resp.StatusCode {
+	case http.StatusOK:
+		log.Println("Async contacts fetch successful, parsing response")
+		return s.parseContactsResponse(resp)
+	case http.StatusAccepted:
+		// Continue polling
+		log.Println("Waiting for async contacts response, polling...")
+		time.Sleep(5 * time.Second)
+	default:
+		log.Printf("Unexpected status code %d received", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
+	resp.Body.Close()
 
 	return s.parseContactsResponse(resp)
-}
-
-// fetchAsyncContacts handles the retrieval of contacts for resultId of async response.
-func (s *WildApricotService) fetchAsyncContacts(resultId string) ([]models.Contact, error) {
-	if err := s.refreshTokenIfNeeded(); err != nil {
-		log.Printf("Error refreshing token for async contacts fetch: %v", err)
-		return nil, err
-	}
-
-	maxRetries := 10 // Maximum number of polling attempts
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		resultUrl := fmt.Sprintf("%s/%d/contacts?resultId=%s",
-			s.WildApricotApiBase,
-			s.cfg.WildApricotAccountId,
-			resultId)
-		req, err := http.NewRequest("GET", resultUrl, nil)
-		if err != nil {
-			log.Printf("Error creating request for async contacts: %v", err)
-			return nil, err
-		}
-		req.Header.Add("Authorization", "Bearer "+s.ApiToken)
-		req.Header.Add("Accept", "application/json")
-
-		resp, err := s.Client.Do(req)
-		if err != nil {
-			log.Printf("Error during async contacts fetch: %v", err)
-			return nil, err
-		}
-
-		// Handling different status codes
-		switch resp.StatusCode {
-		case http.StatusOK:
-			log.Println("Async contacts fetch successful, parsing response")
-			return s.parseContactsResponse(resp)
-		case http.StatusAccepted:
-			// Continue polling
-			log.Println("Waiting for async contacts response, polling...")
-			time.Sleep(5 * time.Second)
-		default:
-			log.Printf("Unexpected status code %d received", resp.StatusCode)
-			return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
-		}
-		resp.Body.Close()
-	}
-
-	return nil, fmt.Errorf("max retries reached for async contacts fetch")
 }
 
 // parseContactsResponse parses the HTTP response to extract contact information.
@@ -208,7 +154,7 @@ func (s *WildApricotService) parseContactsResponse(resp *http.Response) ([]model
 		log.Printf("Error reading contacts response body: %v", err)
 		return nil, err
 	}
-
+	log.Printf("parseContactsResponse body: %s", body)
 	var contactsResponse struct {
 		Contacts []models.Contact `json:"Contacts"`
 	}
