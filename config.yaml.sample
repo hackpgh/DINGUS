@@ -4,3 +4,4 @@ database_path: "db/data/tagsdb.sqlite"
 wild_apricot_account_id: 12345 #Change for prod
 rfid_field_name: "Door Key"
 training_field_name: "Safety Training" # Wild Apricot FieldName for a list of machines (string) that require safety training
+contact_filter_query: status eq Active or status eq 'Pending - Renewal'
