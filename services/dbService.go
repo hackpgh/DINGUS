@@ -61,7 +61,9 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 			return err
 		}
 
-		allRFIDs = append(allRFIDs, rfid)
+		if rfid != 0 {
+			allRFIDs = append(allRFIDs, rfid)
+		}
 
 		for _, label := range trainingLabels {
 			trainingMap[label] = append(trainingMap[label], rfid)
@@ -73,6 +75,12 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 	// resultId is refreshing
 	if len(allRFIDs) <= 0 {
 		return errors.New("allRFIDs list, parsed from Wild Apricot, was empty")
+	}
+
+	totalContactsMissingRFIDs := len(contacts) - len(allRFIDs)
+	if totalContactsMissingRFIDs > 0 {
+		log.Printf("Total empty RFID values detected: %d", totalContactsMissingRFIDs)
+		log.Println("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
 	// Perform database operations with extracted data
@@ -117,6 +125,11 @@ func (s *DBService) parseRFID(fieldValue models.FieldValue) (uint32, error) {
 	rfidValue, ok := fieldValue.Value.(string)
 	if !ok {
 		return 0, errors.New("RFID value is not a string")
+	}
+
+	if len(rfidValue) <= 0 {
+		// Suppress error on empty RFID field value, return 0
+		return uint32(0), nil
 	}
 
 	rfid, err := strconv.ParseInt(rfidValue, 10, 32)
