@@ -154,7 +154,7 @@ func (s *WildApricotService) parseContactsResponse(resp *http.Response) ([]model
 		log.Printf("Error reading contacts response body: %v", err)
 		return nil, err
 	}
-	log.Printf("parseContactsResponse body: %s", body)
+
 	var contactsResponse struct {
 		Contacts []models.Contact `json:"Contacts"`
 	}

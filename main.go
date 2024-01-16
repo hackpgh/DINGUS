@@ -85,7 +85,7 @@ func main() {
 
 	// Start background task to fetch contacts and update the database
 	go func() {
-		ticker := time.NewTicker(25 * time.Second)
+		ticker := time.NewTicker(2 * time.Second)
 		for range ticker.C {
 			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
 		}
