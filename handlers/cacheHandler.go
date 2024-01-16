@@ -16,7 +16,6 @@ type CacheHandler struct {
 }
 
 // NewCacheHandler creates a new instance of CacheHandler.
-// It requires a DBService to interact with the database and a Config for configuration settings.
 func NewCacheHandler(dbService *services.DBService, cfg *config.Config) *CacheHandler {
 	return &CacheHandler{
 		cfg:       cfg,

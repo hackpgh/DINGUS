@@ -103,7 +103,7 @@ func (s *WildApricotService) refreshApiToken() error {
 	return nil
 }
 
-// GetContacts retrieves resultId for async Contacts request to Wild Apricot for the specified account ID.
+// GetContacts retrieves resultId for Contacts request to Wild Apricot for the specified account ID.
 func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	if err := s.refreshTokenIfNeeded(); err != nil {
 		log.Printf("Error refreshing token: %v", err)
@@ -125,25 +125,16 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		log.Printf("Error during async contacts fetch: %v", err)
+		log.Printf("Error during WA contacts fetch: %v", err)
 		return nil, err
 	}
 
-	// Handling different status codes
-	switch resp.StatusCode {
-	case http.StatusOK:
-		log.Println("Async contacts fetch successful, parsing response")
-		return s.parseContactsResponse(resp)
-	case http.StatusAccepted:
-		// Continue polling
-		log.Println("Waiting for async contacts response, polling...")
-		time.Sleep(5 * time.Second)
-	default:
+	if resp.StatusCode != http.StatusOK {
 		log.Printf("Unexpected status code %d received", resp.StatusCode)
 		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
-	resp.Body.Close()
 
+	log.Println("WA contacts fetch successful, parsing response")
 	return s.parseContactsResponse(resp)
 }
 

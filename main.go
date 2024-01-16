@@ -38,6 +38,8 @@ package main
 import (
 	"log"
 	"net/http"
+
+	//_ "net/http/pprof"
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
@@ -47,7 +49,35 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const hackPghBanner = `
++------------------------------------------------------------------+
+|  __    __                   __       _______   ______  __    __  |
+| |  \  |  \                 |  \     |       \ /      \|  \  |  \ |
+| | ▓▓  | ▓▓ ______   _______| ▓▓   __| ▓▓▓▓▓▓▓\  ▓▓▓▓▓▓\ ▓▓  | ▓▓ |
+| | ▓▓__| ▓▓|      \ /       \ ▓▓  /  \ ▓▓__/ ▓▓ ▓▓ __\▓▓ ▓▓__| ▓▓ |
+| | ▓▓    ▓▓ \▓▓▓▓▓▓\  ▓▓▓▓▓▓▓ ▓▓_/  ▓▓ ▓▓    ▓▓ ▓▓|    \ ▓▓    ▓▓ |
+| | ▓▓▓▓▓▓▓▓/      ▓▓ ▓▓     | ▓▓   ▓▓| ▓▓▓▓▓▓▓| ▓▓ \▓▓▓▓ ▓▓▓▓▓▓▓▓ |
+| | ▓▓  | ▓▓  ▓▓▓▓▓▓▓ ▓▓_____| ▓▓▓▓▓▓\| ▓▓     | ▓▓__| ▓▓ ▓▓  | ▓▓ |
+| | ▓▓  | ▓▓\▓▓    ▓▓\▓▓     \ ▓▓  \▓▓\ ▓▓      \▓▓    ▓▓ ▓▓  | ▓▓ |
+|  \▓▓   \▓▓ \▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓\▓▓   \▓▓\▓▓       \▓▓▓▓▓▓ \▓▓   \▓▓ |
+|                                                                  |
+|                   Be Excellent to Each Other                     |
++------------------------------------------------------------------+
+| RFID Backend Server for HackPGH                                  |
+| - Configure via 'config.yml' or '/' endpoint                     |
+| - Serves '/api/doorCache' & '/api/machineCache?machineName= '    |
+| - Ensure SSL certificates are in place for HTTPS.                |
+| Want to contribute? https://github.com/hackpgh/rfid-backend      |
++------------------------------------------------------------------+
+`
+
 func main() {
+	// // pprof monitoring, import '_ /net/http/pprof'
+	// go func() {
+	// 	_ = http.ListenAndServe("0.0.0.0:8081", nil)
+	// }()
+
+	log.Print(hackPghBanner)
 	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
