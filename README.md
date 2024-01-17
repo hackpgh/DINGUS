@@ -3,11 +3,25 @@
 
 ## Overview
 
-The RFID Backend Server is a work in progress designed for HackPGH's magnetic lock and machine access control system. It interfaces with the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api) to fetch [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) and utilizes a local SQLite database to manage RFID tags and training information.
+In a makerspace like HackPGH where diverse paths cross, each member carries a unique story. The RFID Backend Server project resonates with this notion, a silent observer at the crossroads of the maker spirit and collaboration.
+
+Hesse writes, "The river is everywhere at the same time, at the source and at the mouth... in the ocean and in the mountains." Similarly, each tag's journey through this access control system is unique, yet part of a greater flow.
+
+This project, therefore, is more than a functional necessity; it is a symbol of curiosity and, importantly, trust. In the simple act of swiping a tag, members not only access a physical space but also reaffirm their place in a collaborative history. This microcosm of an event cystallizes the trust we place in our fellow makers to create with passion, care, and mutual respect.
+
+In this confluence of technology and humanity, this server becomes a 'river running everywhere' connecting our stories, echoing the interconnectedness Hesse so eloquently depicted, and reminding us that while our journeys are our own, they are made richer for our intersections with the paths of others.
+```
+      |\      _,,,---,,_     "Uh-huh..."
+ZZZzz /,`.-'`'    -.  ;-;;,_
+     |,4-  ) )-,_. ,\ (  `'-'
+    '---''(_/--'  `-'\_)  
+```
+#### TL:DR
+This project is an RFID access control system's backend server written in Golang for the HackPGH makerspace. It uses Wild Apricot API as its source of truth for member data. 
 
 ## Features
 
--   **Wild Apricot Support:** Fetches contact data from the Wild Apricot API.
+-   **Wild Apricot Support:** Fetches [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
 -   **SQLite Database:** Manages RFID tags and training data.
 -   **Automated Synchronization:** Regularly updates the database with the latest API data.
 -   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
