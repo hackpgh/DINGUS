@@ -22,9 +22,10 @@ This project is an RFID access control system's backend server written in Golang
 ## Features
 
 -   **Wild Apricot Support:** Fetches [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
--   **SQLite Database:** Manages RFID tags and training data.
+-   **SQLite Database:** Manages RFID tags and training data requested by rfid scanners on the network.
 -   **Automated Synchronization:** Regularly updates the database with the latest API data.
 -   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
+-   **Configuration Web UI:** Change server settings via web interface hosted at `https:/localhost/` (may require reboot)
 
 ## Project Structure
 
@@ -36,7 +37,7 @@ This project is an RFID access control system's backend server written in Golang
 -   `/models`: Data structures for database entities and API responses.
 -   `/services`: Business logic including API and database operations.
 -   `/utils`: Utility functions and singleton management.
-
+-   `/web-ui`: Web assets for config update UI
 
 ## Getting Started
 
