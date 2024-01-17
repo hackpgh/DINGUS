@@ -24,6 +24,10 @@ jobs:
     - name: Install dependencies
       run: go get .
 
+    - name: Set up Config
+      run: |
+        cp ./config.yaml ${{ github.workspace }}/config.yaml
+
     - name: Build
       run: go build -v ./...
 
