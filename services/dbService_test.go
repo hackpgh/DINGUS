@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"rfid-backend/config"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -9,6 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func mockConfig() *config.Config {
+	return &config.Config{
+		CertFile:             "path/to/test/cert.pem",
+		KeyFile:              "path/to/test/key.pem",
+		DatabasePath:         "path/to/test/database.db",
+		RFIDFieldName:        "RFID",
+		TrainingFieldName:    "Training",
+		WildApricotAccountId: 12345,
+		ContactFilterQuery:   "status eq Active or status eq 'Pending - Renewal'",
+	}
+}
 
 func setupTestDB(t *testing.T) *sql.DB {
 	// Create an in-memory SQLite database
@@ -45,6 +58,8 @@ func setupTestDB(t *testing.T) *sql.DB {
 }
 
 func TestGetAllRFIDs(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 	defer db.Close()
 
@@ -52,7 +67,7 @@ func TestGetAllRFIDs(t *testing.T) {
 	_, err := db.Exec("INSERT INTO members (tag_id, membership_level) VALUES (11111, 1), (22222, 1)")
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	// Execute the test function
 	rfids, err := dbService.GetAllRFIDs()
@@ -65,6 +80,8 @@ func TestGetAllRFIDs(t *testing.T) {
 }
 
 func TestGetRFIDsForMachine(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 	defer db.Close()
 
@@ -76,7 +93,7 @@ func TestGetRFIDsForMachine(t *testing.T) {
 	_, err = db.Exec("INSERT INTO members_trainings_link (tag_id, training_name) VALUES (12345, 'MachineA'), (67890, 'MachineA')")
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	tags, err := dbService.GetRFIDsForMachine("MachineA")
 	assert.NoError(t, err)
@@ -86,13 +103,15 @@ func TestGetRFIDsForMachine(t *testing.T) {
 }
 
 func TestInsertOrUpdateMembers(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 
 	// Start a transaction
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	allRFIDs := []uint32{1234, 5678}
 	err = dbService.insertOrUpdateMembers(tx, allRFIDs)
@@ -109,12 +128,14 @@ func TestInsertOrUpdateMembers(t *testing.T) {
 }
 
 func TestInsertTrainings(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	trainingMap := map[string][]uint32{
 		"Metal Lathe": {1234},
@@ -134,13 +155,15 @@ func TestInsertTrainings(t *testing.T) {
 }
 
 func TestManageMemberTrainingLinks(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 
 	// Start a transaction
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	trainingMap := map[string][]uint32{
 		"Metal Lathe": {1234},
@@ -160,6 +183,8 @@ func TestManageMemberTrainingLinks(t *testing.T) {
 }
 
 func TestDeleteInactiveMembers(t *testing.T) {
+	cfg := mockConfig()
+
 	db := setupTestDB(t)
 	defer db.Close()
 
@@ -171,7 +196,7 @@ func TestDeleteInactiveMembers(t *testing.T) {
 	tx, err := db.Begin()
 	require.NoError(t, err)
 
-	dbService := NewDBService(db, nil)
+	dbService := NewDBService(db, cfg)
 
 	allRFIDs := []uint32{1234} // only 1 active member, remove the inactive record
 	err = dbService.deleteInactiveMembers(tx, allRFIDs)
