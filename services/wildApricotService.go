@@ -103,7 +103,6 @@ func (s *WildApricotService) refreshApiToken() error {
 	return nil
 }
 
-// GetContacts retrieves resultId for Contacts request to Wild Apricot for the specified account ID.
 func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	if err := s.refreshTokenIfNeeded(); err != nil {
 		log.Printf("Error refreshing token: %v", err)
@@ -135,6 +134,40 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	}
 
 	log.Println("WA contacts fetch successful, parsing response")
+	return s.parseContactsResponse(resp)
+}
+
+func (s *WildApricotService) GetContact(contactId string) ([]models.Contact, error) {
+	if err := s.refreshTokenIfNeeded(); err != nil {
+		log.Printf("Error refreshing token: %v", err)
+		return nil, err
+	}
+
+	contactURL := fmt.Sprintf("%s/%d/Contacts/%s",
+		s.WildApricotApiBase,
+		s.cfg.WildApricotAccountId,
+		contactId)
+
+	req, err := http.NewRequest("GET", contactURL, nil)
+	if err != nil {
+		log.Printf("Error creating request for contact: %v", err)
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+s.ApiToken)
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		log.Printf("Error during WA contacts fetch: %v", err)
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code %d received", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	log.Println("WA contact fetch successful, parsing response")
 	return s.parseContactsResponse(resp)
 }
 

@@ -97,9 +97,9 @@ func main() {
 	wildApricotSvc := services.NewWildApricotService(cfg)
 	dbService := services.NewDBService(db, cfg)
 
-	cacheHandler := handlers.NewCacheHandler(dbService, cfg)
-
 	configHandler := handlers.NewConfigHandler()
+
+	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService)
 
 	// Configuration web-ui endpoint
 	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
@@ -110,8 +110,7 @@ func main() {
 	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
 
 	// Access Control system tags data endpoints for rfid readers' cache
-	http.HandleFunc("/api/machineCache", cacheHandler.HandleMachineCacheRequest())
-	http.HandleFunc("/api/doorCache", cacheHandler.HandleDoorCacheRequest())
+	http.HandleFunc("/api/webhooks", webhooksHandler.HandleWebhook())
 
 	// Start background task to fetch contacts and update the database
 	go func() {
