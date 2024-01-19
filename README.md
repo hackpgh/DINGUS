@@ -1,9 +1,9 @@
 
-# (Work-In-Progress) RFID Backend Server for HackPGH
+# (Work-In-Progress) Deployable Integrated Network-Generalized User Selector - DINGUS for HackPGH
 
 ## Overview
 
-In a makerspace like HackPGH where diverse paths cross, each member carries a unique story. The RFID Backend Server project resonates with this notion, a silent observer at the crossroads of the maker spirit and collaboration.
+In a makerspace like HackPGH where diverse paths cross, each member carries a unique story. The DINGUS project resonates with this notion, a silent observer at the crossroads of the maker spirit and collaboration.
 
 Hesse writes, "The river is everywhere at the same time, at the source and at the mouth... in the ocean and in the mountains." Similarly, each tag's journey through this access control system is unique, yet part of a greater flow.
 
@@ -22,10 +22,10 @@ This project is an RFID access control system's backend server written in Golang
 ## Features
 
 -   **Wild Apricot Support:** Fetches [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
--   **SQLite Database:** Manages RFID tags and training data requested by rfid scanners on the network.
--   **Automated Synchronization:** Regularly updates the database with the latest API data.
+-   **SQLite Database:** Maintains a synchronised database of tag ids and safety training sign-offs.
+-   **Automated Synchronization:** Configurable interval for updating the database with the latest WA API data. Supports WA Webhooks.
 -   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
--   **Configuration Web UI:** Change server settings via web interface hosted at `https:/localhost/` (may require reboot)
+-   **Configuration Web UI:** Change server settings via web interface hosted at `https:/localhost/` (may require reboot).
 
 ## Project Structure
 
@@ -88,13 +88,12 @@ The server will start listening for requests on port 443 and periodically update
 ## Endpoints
 
 -   `/`: Update Configuration web UI. Server reboot required for changes to take effect.
--   `/api/doorCache`: Returns all RFID tags for door access.
--   `/api/machineCache?machineName=<urlencoded-machine-name>`: Returns RFID tags for a specified machine.
-
+-   `/webhooks`: Wild Apricot webhooks endpoint.
+-   `/registerDevice`: Process registration requests from ESP controllers on the network.
 
 ## Contributing
 
-Contributions to improve the RFID Backend Server are welcome. Please follow the [standard pull request process](CONTRIBUTING.md) for your contributions.
+Contributions to improve the DINGUS project are welcome. Please follow the [standard pull request process](CONTRIBUTING.md) for your contributions.
 
 ## License
 

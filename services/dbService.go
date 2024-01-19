@@ -247,6 +247,8 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 	return nil
 }
 
+// TODO: Currently webhooks are introducing a bug where all other entries on the members
+// table are being deleted because webhooks only handle 1 contact at a time. Figure out the logic to address this
 func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allRFIDs []uint32) error {
 	// Convert allRFIDs to a string slice for query
 	var params []string
