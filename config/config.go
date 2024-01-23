@@ -83,7 +83,7 @@ func loadConfig() interface{} {
 }
 
 // UpdateConfigFile updates the configuration settings based on the provided newConfig.
-func UpdateConfigFile(newConfig Config) {
+func UpdateConfigFile(newConfig Config) error {
 	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
 		log.Fatalf("Error fetching project root absolute path: %s", err)
@@ -128,7 +128,8 @@ func UpdateConfigFile(newConfig Config) {
 	err = viper.WriteConfig()
 	if err != nil {
 		log.Fatalf("Error writing to config file: %s", err)
-	} else {
-		log.Println("Configuration file updated successfully.")
+		return err
 	}
+	log.Println("Configuration file updated successfully.")
+	return nil
 }

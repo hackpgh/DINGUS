@@ -37,7 +37,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	//_ "net/http/pprof"
 	"rfid-backend/config"
@@ -46,6 +45,7 @@ import (
 	"rfid-backend/services"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -71,12 +71,12 @@ const hackPghBanner = `
 +------------------------------------------------------------------+
 `
 
+// // pprof monitoring, import '_ /net/http/pprof'
+//
+//	go func() {
+//		_ = http.ListenAndServe("0.0.0.0:8081", nil)
+//	}()
 func main() {
-	// // pprof monitoring, import '_ /net/http/pprof'
-	// go func() {
-	// 	_ = http.ListenAndServe("0.0.0.0:8081", nil)
-	// }()
-
 	log.Print(hackPghBanner)
 
 	err := godotenv.Load()
@@ -87,7 +87,6 @@ func main() {
 	cfg := config.LoadConfig()
 	log.Printf("Certificate File: %s", cfg.CertFile)
 	log.Printf("Key File: %s", cfg.KeyFile)
-	log.Printf("Database Path: %s", cfg.DatabasePath)
 	db, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -97,35 +96,38 @@ func main() {
 	wildApricotSvc := services.NewWildApricotService(cfg)
 	dbService := services.NewDBService(db, cfg)
 
+	// Initialize Gin router
+	router := gin.Default()
+
+	// Static file serving for the web UI
+	router.Static("/", "web-ui")
+
+	// Setup handlers using Gin
 	configHandler := handlers.NewConfigHandler()
-
 	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService, cfg)
-
 	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg)
 
-	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
-	http.Handle("/", http.FileServer(http.Dir("web-ui")))
+	router.POST("/api/updateConfig", configHandler.UpdateConfig)
+	router.POST("/api/webhooks", webhooksHandler.HandleWebhook)
+	router.POST("/api/registerDevice", registrationHandler.HandleRegisterDevice)
 
-	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
+	go backgroundDatabaseUpdate(wildApricotSvc, dbService)
 
-	http.HandleFunc("/api/webhooks", webhooksHandler.HandleWebhook())
-
-	http.HandleFunc("/api/registerDevice", registrationHandler.HandleRegisterDevice())
-
-	go func() {
-		// Run full database sync on startup then repeat on ticker interval
-		updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
-
-		ticker := time.NewTicker(30 * time.Minute)
-		for range ticker.C {
-			updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
-		}
-	}()
-
+	// Start the HTTPS server using Gin's router
 	log.Println("Starting HTTPS server on :443...")
-	err = http.ListenAndServeTLS(":443", cfg.CertFile, cfg.KeyFile, nil)
+	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
 		log.Fatalf("Failed to start HTTPS server: %v", err)
+	}
+}
+
+func backgroundDatabaseUpdate(wildApricotSvc *services.WildApricotService, dbService *services.DBService) {
+	// Run full database sync on startup then repeat on ticker interval
+	updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
+
+	ticker := time.NewTicker(30 * time.Minute)
+	for range ticker.C {
+		updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
 	}
 }
 

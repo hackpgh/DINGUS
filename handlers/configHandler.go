@@ -3,10 +3,10 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"rfid-backend/config"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ConfigHandler struct{}
@@ -15,23 +15,23 @@ func NewConfigHandler() *ConfigHandler {
 	return &ConfigHandler{}
 }
 
-func (ch *ConfigHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
-	cfg := config.LoadConfig()
-	json.NewEncoder(w).Encode(cfg)
-}
+// func (ch *ConfigHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
+// 	cfg := config.LoadConfig()
+// 	json.NewEncoder(w).Encode(cfg)
+// }
 
-func (ch *ConfigHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
-	body, _ := ioutil.ReadAll(r.Body)
-
-	// Decode the JSON body into the newConfig struct
+func (ch *ConfigHandler) UpdateConfig(c *gin.Context) {
 	var newConfig config.Config
-	err := json.Unmarshal(body, &newConfig)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if err := c.BindJSON(&newConfig); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update the config file
-	config.UpdateConfigFile(newConfig)
-	w.WriteHeader(http.StatusOK)
+	if err := config.UpdateConfigFile(newConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update configuration"})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
