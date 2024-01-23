@@ -225,18 +225,35 @@ func (s *DBService) insertTrainingsLink(tx *sql.Tx, tag_id uint32, trainings []s
 	return nil
 }
 
-func (s *DBService) ProcessContactWebhookTrainingData(contact models.Contact) error {
-	_, tag_id, training_labels, err := contact.ExtractContactData(s.cfg)
+func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactParameters, contact models.Contact) error {
+	contact_id, tag_id, training_labels, err := contact.ExtractContactData(s.cfg)
 	if err != nil {
 		return err
 	}
 
-	// Perform database operations with extracted data
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
 
+	// Handle tag_id changes
+	// Delete from the members table if they do not have a valid tag_id
+	if tag_id <= 0 {
+		if err := s.deleteLapsedMember(tx, contact_id); err != nil {
+			return err
+		}
+
+		return tx.Commit()
+	}
+
+	// If and only if Status is active, attempt to insert the active member
+	if contact.Status == "Active" {
+		if err := s.insertActiveMember(tx, contact_id, tag_id); err != nil {
+			return err
+		}
+	}
+
+	// Handle trainings changes
 	log.Printf("training_labels: %+v", training_labels)
 	if err := s.insertTrainingsLink(tx, tag_id, training_labels); err != nil {
 		tx.Rollback()

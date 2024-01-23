@@ -84,7 +84,7 @@ func (wh *WebhooksHandler) Process(w http.ResponseWriter, data webhooks.Webhook)
 			if contact == nil {
 				log.Println("No contact found for provided ContactID")
 			} else {
-				wh.dbService.ProcessContactWebhookTrainingData(*contact)
+				wh.dbService.ProcessContactWebhookTrainingData(*contactParams, *contact)
 				log.Printf("Webhook notification processed successfully")
 			}
 		}

@@ -20,6 +20,7 @@ type Contact struct {
 	Url                    string       `json:"Url"`
 	IsAccountAdministrator bool         `json:"IsAccountAdministrator"`
 	TermsOfUseAccepted     bool         `json:"TermsOfUseAccepted"`
+	Status                 string       `json:"Status"`
 }
 
 // FieldValue represents the structure for field values in a contact.
