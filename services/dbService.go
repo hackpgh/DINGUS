@@ -31,7 +31,7 @@ func (s *DBService) GetAllTagIds() ([]uint32, error) {
 
 // Helper function to fetch and format TagId data from a provided query.
 func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, error) {
-	var tag_ids []uint32
+	var tagIds []uint32
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
@@ -41,51 +41,51 @@ func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, er
 
 	// Iterate over the rows and scan the TagId values
 	for rows.Next() {
-		var tag_id uint32
-		if err := rows.Scan(&tag_id); err != nil {
+		var tagId uint32
+		if err := rows.Scan(&tagId); err != nil {
 			return nil, err
 		}
-		tag_ids = append(tag_ids, tag_id)
+		tagIds = append(tagIds, tagId)
 	}
 
-	return tag_ids, nil
+	return tagIds, nil
 }
 
 // service starts with this func
 func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
-	var all_contacts []int
-	var all_tag_ids []uint32
+	var allContacts []int
+	var allTagIds []uint32
 	trainingMap := make(map[string][]uint32)
 
 	for _, contact := range contacts {
-		contact_id, tag_id, trainingLabels, err := contact.ExtractContactData(s.cfg)
+		contactId, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
 		if err != nil {
 			return err
 		}
 
-		if contact_id != 0 {
-			all_contacts = append(all_contacts, contact_id)
+		if contactId != 0 {
+			allContacts = append(allContacts, contactId)
 		}
 
-		if tag_id != 0 {
-			all_tag_ids = append(all_tag_ids, tag_id)
+		if tagId != 0 {
+			allTagIds = append(allTagIds, tagId)
 		}
 
 		for _, label := range trainingLabels {
-			trainingMap[label] = append(trainingMap[label], tag_id)
+			trainingMap[label] = append(trainingMap[label], tagId)
 		}
 	}
 
 	// Guard against empty WA contacts responses which is the
 	// typical first response from WA API when WA async
 	// resultId is refreshing
-	if len(all_tag_ids) <= 0 {
-		return errors.New("all_tag_ids list, parsed from Wild Apricot, was empty")
+	if len(allTagIds) <= 0 {
+		return errors.New("allTagIds list, parsed from Wild Apricot, was empty")
 	}
 
-	missing_tags := len(contacts) - len(all_tag_ids)
-	if missing_tags > 0 {
-		log.Printf("Total empty TagId values detected: %d", missing_tags)
+	missingTags := len(contacts) - len(allTagIds)
+	if missingTags > 0 {
+		log.Printf("Total empty TagId values detected: %d", missingTags)
 		log.Println("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
@@ -95,15 +95,15 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 		return err
 	}
 
-	if err := s.processDatabaseUpdatesAndDeletes(tx, all_contacts, all_tag_ids, trainingMap); err != nil {
+	if err := s.processDatabaseUpdatesAndDeletes(tx, allContacts, allTagIds, trainingMap); err != nil {
 		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
-func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, all_contacts []int, all_tag_ids []uint32, trainingMap map[string][]uint32) error {
-	if err := s.insertOrUpdateAllMembers(tx, all_contacts, all_tag_ids); err != nil {
+func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allContacts []int, allTagIds []uint32, trainingMap map[string][]uint32) error {
+	if err := s.insertOrUpdateAllMembers(tx, allContacts, allTagIds); err != nil {
 		return err
 	}
 
@@ -115,7 +115,7 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, all_contacts []
 		return err
 	}
 
-	if err := s.deleteInactiveMembers(tx, all_contacts); err != nil {
+	if err := s.deleteInactiveMembers(tx, allContacts); err != nil {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, all_contacts []
 	return nil
 }
 
-func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, all_contacts []int, all_tag_ids []uint32) error {
+func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, allContacts []int, allTagIds []uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
 		log.Printf("Error preparing statement: %v", err)
@@ -131,19 +131,19 @@ func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, all_contacts []int, all
 	}
 	defer memberStmt.Close()
 
-	for i := 0; i < len(all_contacts); i++ {
-		membership_level := 1 // Placeholder for actual membership level
-		if _, err := memberStmt.Exec(all_contacts[i], all_tag_ids[i], membership_level, all_tag_ids[i]); err != nil {
-			log.Printf("Error executing insertOrUpdate for tag_id %d: %v", all_tag_ids[i], err)
+	for i := 0; i < len(allContacts); i++ {
+		membershipLevel := 1 // Placeholder for actual membership level
+		if _, err := memberStmt.Exec(allContacts[i], allTagIds[i], membershipLevel, allTagIds[i]); err != nil {
+			log.Printf("Error executing insertOrUpdate for tagId %d: %v", allTagIds[i], err)
 			return err
 		}
 	}
-	log.Printf("finished %d inserts into members table", len(all_contacts))
+	log.Printf("finished %d inserts into members table", len(allContacts))
 
 	return nil
 }
 
-func (s *DBService) insertActiveMember(tx *sql.Tx, contact_id int, tag_id uint32) error {
+func (s *DBService) insertActiveMember(tx *sql.Tx, contactId int, tagId uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
 		log.Printf("Error preparing statement: %v", err)
@@ -151,10 +151,10 @@ func (s *DBService) insertActiveMember(tx *sql.Tx, contact_id int, tag_id uint32
 	}
 	defer memberStmt.Close()
 
-	membership_level := 1 // Placeholder for actual membership level
-	log.Printf("contact_id: %d, tag_id: %d, ml: %d, tag_id: %d", contact_id, tag_id, membership_level, tag_id)
-	if _, err := memberStmt.Exec(contact_id, tag_id, membership_level, tag_id); err != nil {
-		log.Printf("Error executing insertOrUpdate for tag_id %d: %v", tag_id, err)
+	membershipLevel := 1 // Placeholder for actual membership level
+	log.Printf("contactId: %d, tagId: %d, ml: %d, tagId: %d", contactId, tagId, membershipLevel, tagId)
+	if _, err := memberStmt.Exec(contactId, tagId, membershipLevel, tagId); err != nil {
+		log.Printf("Error executing insertOrUpdate for tagId %d: %v", tagId, err)
 		return err
 	}
 	return nil
@@ -166,8 +166,8 @@ func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32)
 		return err
 	}
 	defer trainingStmt.Close()
-	for training_label := range trainingMap {
-		if _, err := trainingStmt.Exec(training_label); err != nil {
+	for trainingLabel := range trainingMap {
+		if _, err := trainingStmt.Exec(trainingLabel); err != nil {
 			return err
 		}
 	}
@@ -181,9 +181,9 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 	}
 	defer linkStmt.Close()
 
-	for training_label, tag_ids := range trainingMap {
-		for _, tag_id := range tag_ids {
-			if _, err := linkStmt.Exec(tag_id, training_label); err != nil {
+	for trainingLabel, tagIds := range trainingMap {
+		for _, tagId := range tagIds {
+			if _, err := linkStmt.Exec(tagId, trainingLabel); err != nil {
 				return err
 			}
 		}
@@ -191,34 +191,34 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 	return nil
 }
 
-func (s *DBService) deleteInactiveMembers(tx *sql.Tx, all_contacts []int) error {
-	// Convert all_contacts to a string slice for query
+func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allContacts []int) error {
+	// Convert allContacts to a string slice for query
 	var params []string
-	for _, contact_id := range all_contacts {
-		params = append(params, strconv.Itoa(contact_id))
+	for _, contactId := range allContacts {
+		params = append(params, strconv.Itoa(contactId))
 	}
-	all_contact_ids := strings.Join(params, ",")
-	query := fmt.Sprintf(deleteInactiveMembersQuery, all_contact_ids)
+	all_contactIds := strings.Join(params, ",")
+	query := fmt.Sprintf(deleteInactiveMembersQuery, all_contactIds)
 
 	_, err := tx.Exec(query)
 	return err
 }
 
-func (s *DBService) deleteLapsedMember(tx *sql.Tx, contact_id int) error {
-	query := fmt.Sprintf(deleteLapsedMembersQuery, strconv.Itoa(int(contact_id)))
+func (s *DBService) deleteLapsedMember(tx *sql.Tx, contactId int) error {
+	query := fmt.Sprintf(deleteLapsedMembersQuery, strconv.Itoa(int(contactId)))
 
 	_, err := tx.Exec(query)
 	return err
 }
 
-func (s *DBService) insertTrainingsLink(tx *sql.Tx, tag_id uint32, trainings []string) error {
+func (s *DBService) insertTrainingsLink(tx *sql.Tx, tagId uint32, trainings []string) error {
 	linkStmt, err := tx.Prepare(InsertMemberTrainingLinkQuery)
 	if err != nil {
 		return err
 	}
 	defer linkStmt.Close()
-	for _, training_label := range trainings {
-		if _, err := linkStmt.Exec(tag_id, training_label); err != nil {
+	for _, trainingLabel := range trainings {
+		if _, err := linkStmt.Exec(tagId, trainingLabel); err != nil {
 			return err
 		}
 	}
@@ -226,7 +226,7 @@ func (s *DBService) insertTrainingsLink(tx *sql.Tx, tag_id uint32, trainings []s
 }
 
 func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactParameters, contact models.Contact) error {
-	contact_id, tag_id, training_labels, err := contact.ExtractContactData(s.cfg)
+	contactId, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
 	if err != nil {
 		return err
 	}
@@ -236,10 +236,10 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 		return err
 	}
 
-	// Handle tag_id changes
-	// Delete from the members table if they do not have a valid tag_id
-	if tag_id <= 0 {
-		if err := s.deleteLapsedMember(tx, contact_id); err != nil {
+	// Handle tagId changes
+	// Delete from the members table if they do not have a valid tagId
+	if tagId <= 0 {
+		if err := s.deleteLapsedMember(tx, contactId); err != nil {
 			return err
 		}
 
@@ -248,14 +248,14 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 
 	// If and only if Status is active, attempt to insert the active member
 	if contact.Status == "Active" {
-		if err := s.insertActiveMember(tx, contact_id, tag_id); err != nil {
+		if err := s.insertActiveMember(tx, contactId, tagId); err != nil {
 			return err
 		}
 	}
 
 	// Handle trainings changes
-	log.Printf("training_labels: %+v", training_labels)
-	if err := s.insertTrainingsLink(tx, tag_id, training_labels); err != nil {
+	log.Printf("trainingLabels: %+v", trainingLabels)
+	if err := s.insertTrainingsLink(tx, tagId, trainingLabels); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -264,7 +264,7 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 }
 
 func (s *DBService) ProcessMembershipWebhook(params webhooks.MembershipParameters, contact models.Contact) error {
-	contact_id, tag_id, _, err := contact.ExtractContactData(s.cfg)
+	contactId, tagId, _, err := contact.ExtractContactData(s.cfg)
 	if err != nil {
 		return err
 	}
@@ -279,13 +279,13 @@ func (s *DBService) ProcessMembershipWebhook(params webhooks.MembershipParameter
 	case webhooks.StatusLapsed:
 		log.Printf("Lapsed membership detected")
 
-		if err := s.deleteLapsedMember(tx, contact_id); err != nil {
+		if err := s.deleteLapsedMember(tx, contactId); err != nil {
 			tx.Rollback()
 			return err
 		}
 	case webhooks.StatusActive:
 		log.Printf("Active membership detected")
-		if err := s.insertActiveMember(tx, contact_id, tag_id); err != nil {
+		if err := s.insertActiveMember(tx, contactId, tagId); err != nil {
 			tx.Rollback()
 			return err
 		}

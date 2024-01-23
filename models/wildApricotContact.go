@@ -36,7 +36,7 @@ type SafetyTraining struct {
 	Label string `json:"Label"`
 }
 
-// Returns contact_id, tag_id, trainings
+// Returns contact_id, tagId, trainings
 func (c *Contact) ExtractTagID(cfg *config.Config) (uint32, error) {
 	for _, val := range c.FieldValues {
 		if val.FieldName == cfg.TagIdFieldName {
@@ -72,26 +72,26 @@ func (c *Contact) ExtractContactData(cfg *config.Config) (int, uint32, []string,
 }
 
 func parseTagId(fieldValue FieldValue) (uint32, error) {
-	tag_value, ok := fieldValue.Value.(string)
+	strVal, ok := fieldValue.Value.(string)
 	if !ok {
 		return 0, errors.New("TagId value is not a string")
 	}
 
-	if len(tag_value) <= 0 {
+	if len(strVal) <= 0 {
 		// Suppress error on empty TagId field value, return 0
 		return uint32(0), nil
 	}
 
-	tag_id, err := strconv.ParseInt(tag_value, 10, 32)
+	tagId, err := strconv.ParseInt(strVal, 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("failed to convert string TagId to int: %v", err)
 	}
 
-	if tag_id <= 0 {
+	if tagId <= 0 {
 		return 0, errors.New("TagId value is non-positive")
 	}
 
-	return uint32(tag_id), nil
+	return uint32(tagId), nil
 }
 
 func parseTrainingLabels(fieldValue FieldValue) ([]string, error) {

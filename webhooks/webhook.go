@@ -15,7 +15,7 @@ type Webhook struct {
 // UnmarshalJSON is a custom unmarshaler for Webhook that handles different Parameter types.
 func (w *Webhook) UnmarshalJSON(data []byte) error {
 	var raw struct {
-		AccountId   string          `json:"AccountId" type:"integer" required:"true"`
+		AccountId   string          `json:"AccountId"`
 		MessageType string          `json:"MessageType"`
 		Parameters  json.RawMessage `json:"Parameters"`
 	}
