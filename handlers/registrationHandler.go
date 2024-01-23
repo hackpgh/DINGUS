@@ -24,6 +24,16 @@ func NewRegistrationHandler(dbService *services.DBService, cfg *config.Config, l
 	}
 }
 
+// @Summary Register device
+// @Description Register a new device with its IP and name.
+// @ID register-device
+// @Accept  json
+// @Produce  json
+// @Param   deviceName  query    string  true  "Device Name"
+// @Success 200  {string}  string "Device registered successfully"
+// @Failure 400  {string}  string "Bad Request"
+// @Failure 500  {string}  string "Internal Server Error"
+// @Router /api/registerDevice [post]
 func (rh *RegistrationHandler) HandleRegisterDevice(c *gin.Context) {
 	deviceName := c.Query("deviceName")
 	if deviceName == "" {

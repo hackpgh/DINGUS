@@ -28,6 +28,16 @@ func NewWebhooksHandler(waService *services.WildApricotService, dbService *servi
 	}
 }
 
+// @Summary Handle Wild Apricot webhook requests
+// @Description Wild Apricot sends arbitrary JSON per event trigger bsed on their criteria detailed in the official docs
+// @ID handle-webhook
+// @Accept  json
+// @Produce  json
+// @Param   token  query    string  true  "Token"
+// @Success 200  {string}  string "Webhook processed successfully"
+// @Failure 400  {string}  string "Bad Request"
+// @Failure 500  {string}  string "Internal Server Error"
+// @Router /api/webhooks [post]
 func (wh *WebhooksHandler) HandleWebhook(c *gin.Context) {
 	if c.Request.Method != http.MethodPost {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Method not allowed"})

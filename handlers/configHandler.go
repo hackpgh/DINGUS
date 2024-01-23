@@ -19,6 +19,15 @@ func NewConfigHandler(logger *logrus.Logger) *ConfigHandler {
 	}
 }
 
+// @Summary Update config
+// @Description Updates the server's config yaml file
+// @ID update-config
+// @Accept  json
+// @Produce  json
+// @Success 200  {string}  string "Config updated successfully"
+// @Failure 400  {string}  string "Bad Request"
+// @Failure 500  {string}  string "Internal Server Error"
+// @Router /api/updateConfig [post]
 func (ch *ConfigHandler) UpdateConfig(c *gin.Context) {
 	var newConfig config.Config
 

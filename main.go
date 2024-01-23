@@ -40,6 +40,8 @@ import (
 	"net/http"
 
 	//_ "net/http/pprof"
+	"github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
@@ -49,6 +51,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	_ "rfid-backend/docs"
 )
 
 const hackPghBanner = `
@@ -105,7 +108,9 @@ func main() {
 
 	router := gin.Default()
 	router.Use(GinLogrus(logger), gin.Recovery())
-	router.Static("/", "web-ui")
+	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+
 	api := router.Group("/api")
 	{
 		webhooksHandler := handlers.NewWebhooksHandler(waService, dbService, cfg, logger)
@@ -116,7 +121,7 @@ func main() {
 		api.POST("/webhooks", webhooksHandler.HandleWebhook)
 		api.POST("/registerDevice", registrationHandler.HandleRegisterDevice)
 	}
-
+	router.Static("/changeSettings", "web-ui")
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 	})
