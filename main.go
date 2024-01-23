@@ -114,9 +114,12 @@ func main() {
 
 	// Start background task to fetch contacts and update the database
 	go func() {
+		// Run full database sync on startup
+		updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
+
 		ticker := time.NewTicker(30 * time.Minute)
 		for range ticker.C {
-			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
+			updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
 		}
 	}()
 
@@ -127,7 +130,7 @@ func main() {
 	}
 }
 
-func updateDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService) {
+func updateEntireDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService) {
 	log.Println("Fetching contacts from Wild Apricot and updating database...")
 	contacts, err := waService.GetContacts()
 	if err != nil {
