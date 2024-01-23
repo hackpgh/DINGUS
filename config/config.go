@@ -17,13 +17,15 @@ var (
 )
 
 type Config struct {
-	CertFile             string `mapstructure:"cert_file" json:"cert_file"`
-	DatabasePath         string `mapstructure:"database_path" json:"database_path"`
-	KeyFile              string `mapstructure:"key_file" json:"key_file"`
-	RFIDFieldName        string `mapstructure:"rfid_field_name" json:"rfid_field_name"`
-	TrainingFieldName    string `mapstructure:"training_field_name" json:"training_field_name"`
-	WildApricotAccountId int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
-	ContactFilterQuery   string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
+	CertFile                string `mapstructure:"cert_file" json:"cert_file"`
+	DatabasePath            string `mapstructure:"database_path" json:"database_path"`
+	KeyFile                 string `mapstructure:"key_file" json:"key_file"`
+	TagIdFieldName          string `mapstructure:"tag_id_field_name" json:"tag_id_field_name"`
+	TrainingFieldName       string `mapstructure:"training_field_name" json:"training_field_name"`
+	WildApricotAccountId    int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
+	ContactFilterQuery      string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
+	WildApricotApiKey       string
+	WildApricotWebhookToken string
 }
 
 func init() {
@@ -66,6 +68,17 @@ func loadConfig() interface{} {
 		log.Fatalf("Key file not found: %s", cfg.KeyFile)
 	}
 
+	// Load environment variables
+	cfg.WildApricotApiKey = os.Getenv("WILD_APRICOT_API_KEY")
+	if cfg.WildApricotApiKey == "" {
+		log.Fatalf("WILD_APRICOT_API_KEY not set in environment variables")
+	}
+
+	cfg.WildApricotWebhookToken = os.Getenv("WILD_APRICOT_WEBHOOK_TOKEN")
+	if cfg.WildApricotWebhookToken == "" {
+		log.Fatalf("WILD_APRICOT_WEBHOOK_TOKEN not set in environment variables")
+	}
+
 	return &cfg
 }
 
@@ -104,8 +117,8 @@ func UpdateConfigFile(newConfig Config) {
 		viper.Set("contact_filter_query", newConfig.ContactFilterQuery)
 
 	}
-	if newConfig.RFIDFieldName != "" {
-		viper.Set("rfid_field_name", newConfig.RFIDFieldName)
+	if newConfig.TagIdFieldName != "" {
+		viper.Set("tag_id_field_name", newConfig.TagIdFieldName)
 	}
 	if newConfig.TrainingFieldName != "" {
 		viper.Set("training_field_name", newConfig.TrainingFieldName)

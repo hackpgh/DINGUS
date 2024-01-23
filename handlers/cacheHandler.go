@@ -8,7 +8,7 @@ import (
 	"rfid-backend/services"
 )
 
-// CacheHandler handles requests related to RFID and machine cache.
+// CacheHandler handles requests related to TagId and machine cache.
 // It interacts with the database service to fetch and provide the requested db data.
 type CacheHandler struct {
 	cfg       *config.Config      // Configuration settings
@@ -23,7 +23,7 @@ func NewCacheHandler(dbService *services.DBService, cfg *config.Config) *CacheHa
 	}
 }
 
-// HandleMachineCacheRequest creates an HTTP handler function that responds with RFID tags trained for a specific machine.
+// HandleMachineCacheRequest creates an HTTP handler function that responds with TagId tags trained for a specific machine.
 // It expects a 'machineName' query parameter in the request.
 func (ch *CacheHandler) HandleMachineCacheRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -33,30 +33,30 @@ func (ch *CacheHandler) HandleMachineCacheRequest() http.HandlerFunc {
 			return
 		}
 
-		log.Printf("Fetching RFID tags for machine: %s", machineName)
-		rfids, err := ch.dbService.GetRFIDsForMachine(machineName)
+		log.Printf("Fetching TagId tags for machine: %s", machineName)
+		tag_ids, err := ch.dbService.GetTagIdsForMachine(machineName)
 		if err != nil {
-			log.Printf("Error fetching RFID tags for machine %s: %v", machineName, err)
+			log.Printf("Error fetching TagId tags for machine %s: %v", machineName, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
-		json.NewEncoder(w).Encode(rfids)
+		json.NewEncoder(w).Encode(tag_ids)
 	}
 }
 
-// HandleDoorCacheRequest creates an HTTP handler function that responds with all RFID tags.
+// HandleDoorCacheRequest creates an HTTP handler function that responds with all TagId.
 // It is used to manage access control for doors.
 func (ch *CacheHandler) HandleDoorCacheRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Fetching all RFID tags")
-		rfids, err := ch.dbService.GetAllRFIDs()
+		log.Println("Fetching all TagId tags")
+		tag_ids, err := ch.dbService.GetAllTagIds()
 		if err != nil {
-			log.Printf("Error fetching all RFID tags: %v", err)
+			log.Printf("Error fetching all TagId tags: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
-		json.NewEncoder(w).Encode(rfids)
+		json.NewEncoder(w).Encode(tag_ids)
 	}
 }

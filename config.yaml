@@ -2,6 +2,6 @@ cert_file: .ssh/id_rsa/dev_pubkey.pem
 contact_filter_query: "Status eq Active or Status eq PendingRenewal"
 database_path: db/data/tagsdb.sqlite
 key_file: .ssh/id_rsa/dev_secret.pem
-rfid_field_name: Door Key
+tag_id_field_name: Door Key
 training_field_name: Safety Training
 wild_apricot_account_id: 123456

@@ -78,7 +78,7 @@ func main() {
 	// }()
 
 	log.Print(hackPghBanner)
-	// Load .env file
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -99,7 +99,7 @@ func main() {
 
 	configHandler := handlers.NewConfigHandler()
 
-	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService)
+	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService, cfg)
 
 	// Configuration web-ui endpoint
 	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
@@ -109,12 +109,12 @@ func main() {
 	http.HandleFunc("/api/getConfig", configHandler.GetConfig)
 	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
 
-	// Access Control system tags data endpoints for rfid readers' cache
+	// Wild Apricot webhooks endpoint
 	http.HandleFunc("/api/webhooks", webhooksHandler.HandleWebhook())
 
 	// Start background task to fetch contacts and update the database
 	go func() {
-		ticker := time.NewTicker(2 * time.Second)
+		ticker := time.NewTicker(30 * time.Minute)
 		for range ticker.C {
 			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
 		}

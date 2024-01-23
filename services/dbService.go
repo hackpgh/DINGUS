@@ -7,6 +7,7 @@ import (
 	"log"
 	"rfid-backend/config"
 	"rfid-backend/models"
+	"rfid-backend/webhooks"
 	"strconv"
 	"strings"
 )
@@ -20,17 +21,17 @@ func NewDBService(db *sql.DB, cfg *config.Config) *DBService {
 	return &DBService{db: db, cfg: cfg}
 }
 
-func (s *DBService) GetRFIDsForMachine(machineName string) ([]uint32, error) {
-	return s.fetchRFIDs(GetRFIDsForMachineQuery, machineName)
+func (s *DBService) GetTagIdsForMachine(machineName string) ([]uint32, error) {
+	return s.fetchTagIds(GetTagIdsForMachineQuery, machineName)
 }
 
-func (s *DBService) GetAllRFIDs() ([]uint32, error) {
-	return s.fetchRFIDs(GetAllRFIDsQuery)
+func (s *DBService) GetAllTagIds() ([]uint32, error) {
+	return s.fetchTagIds(GetAllTagIdsQuery)
 }
 
-// Helper function to fetch and format RFID data from a provided query.
-func (s *DBService) fetchRFIDs(query string, args ...interface{}) ([]uint32, error) {
-	var rfids []uint32
+// Helper function to fetch and format TagId data from a provided query.
+func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, error) {
+	var tag_ids []uint32
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
@@ -38,48 +39,53 @@ func (s *DBService) fetchRFIDs(query string, args ...interface{}) ([]uint32, err
 	}
 	defer rows.Close()
 
-	// Iterate over the rows and scan the RFID values
+	// Iterate over the rows and scan the TagId values
 	for rows.Next() {
-		var rfid uint32
-		if err := rows.Scan(&rfid); err != nil {
+		var tag_id uint32
+		if err := rows.Scan(&tag_id); err != nil {
 			return nil, err
 		}
-		rfids = append(rfids, rfid)
+		tag_ids = append(tag_ids, tag_id)
 	}
 
-	return rfids, nil
+	return tag_ids, nil
 }
 
 // service starts with this func
 func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
-	var allRFIDs []uint32
+	var all_contacts []int
+	var all_tag_ids []uint32
 	trainingMap := make(map[string][]uint32)
 
 	for _, contact := range contacts {
-		rfid, trainingLabels, err := s.extractContactData(contact)
+		contact_id, tag_id, trainingLabels, err := contact.ExtractContactData(s.cfg)
 		if err != nil {
 			return err
 		}
 
-		if rfid != 0 {
-			allRFIDs = append(allRFIDs, rfid)
+		if contact_id != 0 {
+			all_contacts = append(all_contacts, contact_id)
+		}
+
+		if tag_id != 0 {
+			all_tag_ids = append(all_tag_ids, tag_id)
 		}
 
 		for _, label := range trainingLabels {
-			trainingMap[label] = append(trainingMap[label], rfid)
+			trainingMap[label] = append(trainingMap[label], tag_id)
 		}
 	}
 
 	// Guard against empty WA contacts responses which is the
 	// typical first response from WA API when WA async
 	// resultId is refreshing
-	if len(allRFIDs) <= 0 {
-		return errors.New("allRFIDs list, parsed from Wild Apricot, was empty")
+	if len(all_tag_ids) <= 0 {
+		return errors.New("all_tag_ids list, parsed from Wild Apricot, was empty")
 	}
 
-	totalContactsMissingRFIDs := len(contacts) - len(allRFIDs)
-	if totalContactsMissingRFIDs > 0 {
-		log.Printf("Total empty RFID values detected: %d", totalContactsMissingRFIDs)
+	missing_tags := len(contacts) - len(all_tag_ids)
+	if missing_tags > 0 {
+		log.Printf("Total empty TagId values detected: %d", missing_tags)
 		log.Println("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
@@ -89,95 +95,15 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 		return err
 	}
 
-	if err := s.processDatabaseUpdatesAndDeletes(tx, allRFIDs, trainingMap); err != nil {
+	if err := s.processDatabaseUpdatesAndDeletes(tx, all_contacts, all_tag_ids, trainingMap); err != nil {
 		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
-func (s *DBService) extractContactData(contact models.Contact) (uint32, []string, error) {
-	var convertedRfid uint32
-	var trainingLabels []string
-
-	for _, fieldValue := range contact.FieldValues {
-		switch fieldValue.FieldName {
-		case s.cfg.RFIDFieldName:
-			rfid, err := s.parseRFID(fieldValue)
-			if err != nil {
-				return 0, nil, fmt.Errorf("error parsing RFID for contact %d: %v", contact.Id, err)
-			}
-			convertedRfid = rfid
-
-		case s.cfg.TrainingFieldName:
-			labels, err := s.parseTrainingLabels(fieldValue)
-			if err != nil {
-				return 0, nil, fmt.Errorf("error parsing training labels for contact %d: %v", contact.Id, err)
-			}
-			trainingLabels = append(trainingLabels, labels...)
-		}
-	}
-
-	return convertedRfid, trainingLabels, nil
-}
-
-func (s *DBService) parseRFID(fieldValue models.FieldValue) (uint32, error) {
-	rfidValue, ok := fieldValue.Value.(string)
-	if !ok {
-		return 0, errors.New("RFID value is not a string")
-	}
-
-	if len(rfidValue) <= 0 {
-		// Suppress error on empty RFID field value, return 0
-		return uint32(0), nil
-	}
-
-	rfid, err := strconv.ParseInt(rfidValue, 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("failed to convert string RFID to int: %v", err)
-	}
-
-	if rfid <= 0 {
-		return 0, errors.New("RFID value is non-positive")
-	}
-
-	return uint32(rfid), nil
-}
-
-func (s *DBService) parseTrainingLabels(fieldValue models.FieldValue) ([]string, error) {
-	trainingValues, ok := fieldValue.Value.([]interface{})
-	if !ok {
-		return nil, errors.New("training value is not a slice")
-	}
-
-	var labels []string
-	for _, t := range trainingValues {
-		trainingMap, ok := t.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("training item is not a map")
-		}
-
-		label, err := s.extractLabelFromTrainingMap(trainingMap)
-		if err != nil {
-			return nil, err
-		}
-		labels = append(labels, label)
-	}
-
-	return labels, nil
-}
-
-func (s *DBService) extractLabelFromTrainingMap(trainingMap map[string]interface{}) (string, error) {
-	label, ok := trainingMap["Label"].(string)
-	if !ok {
-		return "", errors.New("training label is not a string")
-	}
-
-	return label, nil
-}
-
-func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint32, trainingMap map[string][]uint32) error {
-	if err := s.insertOrUpdateMembers(tx, allRFIDs); err != nil {
+func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, all_contacts []int, all_tag_ids []uint32, trainingMap map[string][]uint32) error {
+	if err := s.insertOrUpdateAllMembers(tx, all_contacts, all_tag_ids); err != nil {
 		return err
 	}
 
@@ -189,7 +115,7 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint
 		return err
 	}
 
-	if err := s.deleteInactiveMembers(tx, allRFIDs); err != nil {
+	if err := s.deleteInactiveMembers(tx, all_contacts); err != nil {
 		return err
 	}
 
@@ -197,22 +123,39 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allRFIDs []uint
 	return nil
 }
 
-func (s *DBService) insertOrUpdateMembers(tx *sql.Tx, allRFIDs []uint32) error {
+func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, all_contacts []int, all_tag_ids []uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
 		log.Printf("Error preparing statement: %v", err)
 		return err
 	}
-	defer func() {
-		memberStmt.Close()
-	}()
+	defer memberStmt.Close()
 
-	for _, rfid := range allRFIDs {
-		membershipLevel := 1 // Placeholder for actual membership level
-		if _, err := memberStmt.Exec(rfid, membershipLevel); err != nil {
-			log.Printf("Error executing insertOrUpdate for RFID %d: %v", rfid, err)
+	for i := 0; i < len(all_contacts); i++ {
+		membership_level := 1 // Placeholder for actual membership level
+		if _, err := memberStmt.Exec(all_contacts[i], all_tag_ids[i], membership_level, all_tag_ids[i]); err != nil {
+			log.Printf("Error executing insertOrUpdate for tag_id %d: %v", all_tag_ids[i], err)
 			return err
 		}
+	}
+	log.Printf("finished %d inserts into members table", len(all_contacts))
+
+	return nil
+}
+
+func (s *DBService) insertActiveMember(tx *sql.Tx, contact_id int, tag_id uint32) error {
+	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
+	if err != nil {
+		log.Printf("Error preparing statement: %v", err)
+		return err
+	}
+	defer memberStmt.Close()
+
+	membership_level := 1 // Placeholder for actual membership level
+	log.Printf("contact_id: %d, tag_id: %d, ml: %d, tag_id: %d", contact_id, tag_id, membership_level, tag_id)
+	if _, err := memberStmt.Exec(contact_id, tag_id, membership_level, tag_id); err != nil {
+		log.Printf("Error executing insertOrUpdate for tag_id %d: %v", tag_id, err)
+		return err
 	}
 	return nil
 }
@@ -223,8 +166,8 @@ func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32)
 		return err
 	}
 	defer trainingStmt.Close()
-	for trainingName := range trainingMap {
-		if _, err := trainingStmt.Exec(trainingName); err != nil {
+	for training_label := range trainingMap {
+		if _, err := trainingStmt.Exec(training_label); err != nil {
 			return err
 		}
 	}
@@ -237,9 +180,10 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 		return err
 	}
 	defer linkStmt.Close()
-	for trainingName, rfids := range trainingMap {
-		for _, rfid := range rfids {
-			if _, err := linkStmt.Exec(rfid, trainingName); err != nil {
+
+	for training_label, tag_ids := range trainingMap {
+		for _, tag_id := range tag_ids {
+			if _, err := linkStmt.Exec(tag_id, training_label); err != nil {
 				return err
 			}
 		}
@@ -247,17 +191,88 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 	return nil
 }
 
-// TODO: Currently webhooks are introducing a bug where all other entries on the members
-// table are being deleted because webhooks only handle 1 contact at a time. Figure out the logic to address this
-func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allRFIDs []uint32) error {
-	// Convert allRFIDs to a string slice for query
+func (s *DBService) deleteInactiveMembers(tx *sql.Tx, all_contacts []int) error {
+	// Convert all_contacts to a string slice for query
 	var params []string
-	for _, rfid := range allRFIDs {
-		params = append(params, strconv.Itoa(int(rfid)))
+	for _, contact_id := range all_contacts {
+		params = append(params, strconv.Itoa(contact_id))
 	}
-	tagIDList := strings.Join(params, ",")
-	query := fmt.Sprintf(deleteInactiveMembersQuery, tagIDList)
+	all_contact_ids := strings.Join(params, ",")
+	query := fmt.Sprintf(deleteInactiveMembersQuery, all_contact_ids)
 
 	_, err := tx.Exec(query)
 	return err
+}
+
+func (s *DBService) deleteLapsedMember(tx *sql.Tx, contact_id int) error {
+	query := fmt.Sprintf(deleteLapsedMembersQuery, strconv.Itoa(int(contact_id)))
+
+	_, err := tx.Exec(query)
+	return err
+}
+
+func (s *DBService) insertTrainingsLink(tx *sql.Tx, tag_id uint32, trainings []string) error {
+	linkStmt, err := tx.Prepare(InsertMemberTrainingLinkQuery)
+	if err != nil {
+		return err
+	}
+	defer linkStmt.Close()
+	for _, training_label := range trainings {
+		if _, err := linkStmt.Exec(tag_id, training_label); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *DBService) ProcessContactWebhookTrainingData(contact models.Contact) error {
+	_, tag_id, training_labels, err := contact.ExtractContactData(s.cfg)
+	if err != nil {
+		return err
+	}
+
+	// Perform database operations with extracted data
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("training_labels: %+v", training_labels)
+	if err := s.insertTrainingsLink(tx, tag_id, training_labels); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *DBService) ProcessMembershipWebhook(params webhooks.MembershipParameters, contact models.Contact) error {
+	contact_id, tag_id, _, err := contact.ExtractContactData(s.cfg)
+	if err != nil {
+		return err
+	}
+
+	// Perform database operations with extracted data
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	switch params.MembershipStatus {
+	case webhooks.StatusLapsed:
+		log.Printf("Lapsed membership detected")
+
+		if err := s.deleteLapsedMember(tx, contact_id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	case webhooks.StatusActive:
+		log.Printf("Active membership detected")
+		if err := s.insertActiveMember(tx, contact_id, tag_id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

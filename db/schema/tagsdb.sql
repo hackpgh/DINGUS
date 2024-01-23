@@ -1,8 +1,11 @@
 -- Create Members Table
 CREATE TABLE IF NOT EXISTS members (
-    tag_id INTEGER PRIMARY KEY,
+    contact_id INTEGER PRIMARY KEY,
+    tag_id INTEGER NOT NULL,
     membership_level INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_members_tag_id ON members(tag_id);
 
 -- Create SafetyTrainings Table
 CREATE TABLE IF NOT EXISTS trainings (

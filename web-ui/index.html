@@ -75,8 +75,8 @@
             <label for="contactFilterQuery">Wild Apricot Contact Filter Query:</label>
             <input type="text" id="contactFilterQuery" placeholder="e.g., status eq Active or status eq 'Pending - Renewal'"><br>
             
-            <label for="rfidFieldName">RFID Field Name:</label>
-            <input type="text" id="rfidFieldName" placeholder="e.g., Door Key"><br>
+            <label for="tagIdFieldName">Tag Id Field Name:</label>
+            <input type="text" id="tagIdFieldName" placeholder="e.g., Door Key"><br>
             
             <label for="trainingFieldName">Training Field Name:</label>
             <input type="text" id="trainingFieldName" placeholder="e.g., Safety Training"><br>
@@ -103,7 +103,7 @@
                 database_path: document.getElementById('databasePath').value,
                 wild_apricot_account_id: accountId,
                 contact_filter_query: document.getElementById('contactFilterQuery').value,
-                rfid_field_name: document.getElementById('rfidFieldName').value,
+                tag_id_field_name: document.getElementById('tagIdFieldName').value,
                 training_field_name: document.getElementById('trainingFieldName').value
             };
     
