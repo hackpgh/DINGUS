@@ -4,21 +4,23 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"rfid-backend/config"
 	"rfid-backend/models"
 	"rfid-backend/webhooks"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type DBService struct {
 	db  *sql.DB
 	cfg *config.Config
+	log *logrus.Logger
 }
 
-func NewDBService(db *sql.DB, cfg *config.Config) *DBService {
-	return &DBService{db: db, cfg: cfg}
+func NewDBService(db *sql.DB, cfg *config.Config, logger *logrus.Logger) *DBService {
+	return &DBService{db: db, cfg: cfg, log: logger}
 }
 
 func (s *DBService) GetTagIdsForTraining(machineName string) ([]uint32, error) {
@@ -59,7 +61,7 @@ func (s *DBService) GetTraining(label string) (string, error) {
 
 	var training string
 	if err := row.Scan(&training); err != nil {
-		log.Printf("No Training found for %s", label)
+		s.log.Warnf("No Training found for %s", label)
 		return "", err
 	}
 
@@ -100,8 +102,8 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 
 	missingTags := len(contacts) - len(allTagIds)
 	if missingTags > 0 {
-		log.Printf("Total empty TagId values detected: %d", missingTags)
-		log.Println("Will ignore contact if awaiting onboarding, otherwise deleting member")
+		s.log.Infof("Total empty TagId values detected: %d", missingTags)
+		s.log.Info("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
 	// Perform database operations with extracted data
@@ -141,7 +143,7 @@ func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allContacts []i
 func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, allContacts []int, allTagIds []uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
-		log.Printf("Error preparing statement: %v", err)
+		s.log.Errorf("Error preparing statement: %v", err)
 		return err
 	}
 	defer memberStmt.Close()
@@ -149,11 +151,11 @@ func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, allContacts []int, allT
 	for i := 0; i < len(allContacts); i++ {
 		membershipLevel := 1 // Placeholder for actual membership level
 		if _, err := memberStmt.Exec(allContacts[i], allTagIds[i], membershipLevel, allTagIds[i]); err != nil {
-			log.Printf("Error executing insertOrUpdate for tagId %d: %v", allTagIds[i], err)
+			s.log.Errorf("Error executing insertOrUpdate for tagId %d: %v", allTagIds[i], err)
 			return err
 		}
 	}
-	log.Printf("finished %d inserts into members table", len(allContacts))
+	s.log.Infof("finished %d inserts into members table", len(allContacts))
 
 	return nil
 }
@@ -161,15 +163,15 @@ func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, allContacts []int, allT
 func (s *DBService) insertActiveMember(tx *sql.Tx, contactId int, tagId uint32) error {
 	memberStmt, err := tx.Prepare(InsertOrUpdateMemberQuery)
 	if err != nil {
-		log.Printf("Error preparing statement: %v", err)
+		s.log.Errorf("Error preparing statement: %v", err)
 		return err
 	}
 	defer memberStmt.Close()
 
 	membershipLevel := 1 // Placeholder for actual membership level
-	log.Printf("contactId: %d, tagId: %d, ml: %d, tagId: %d", contactId, tagId, membershipLevel, tagId)
+	s.log.Infof("contactId: %d, tagId: %d, ml: %d, tagId: %d", contactId, tagId, membershipLevel, tagId)
 	if _, err := memberStmt.Exec(contactId, tagId, membershipLevel, tagId); err != nil {
-		log.Printf("Error executing insertOrUpdate for tagId %d: %v", tagId, err)
+		s.log.Errorf("Error executing insertOrUpdate for tagId %d: %v", tagId, err)
 		return err
 	}
 	return nil
@@ -305,7 +307,7 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 	}
 
 	// Handle trainings changes
-	log.Printf("trainingLabels: %+v", trainingLabels)
+	s.log.Infof("trainingLabels: %+v", trainingLabels)
 	if err := s.insertTrainingsLink(tx, tagId, trainingLabels); err != nil {
 		tx.Rollback()
 		return err
@@ -328,14 +330,14 @@ func (s *DBService) ProcessMembershipWebhook(params webhooks.MembershipParameter
 
 	switch params.MembershipStatus {
 	case webhooks.StatusLapsed:
-		log.Printf("Lapsed membership detected")
+		s.log.Infof("Lapsed membership detected")
 
 		if err := s.deleteLapsedMember(tx, contactId); err != nil {
 			tx.Rollback()
 			return err
 		}
 	case webhooks.StatusActive:
-		log.Printf("Active membership detected")
+		s.log.Infof("Active membership detected")
 		if err := s.insertActiveMember(tx, contactId, tagId); err != nil {
 			tx.Rollback()
 			return err

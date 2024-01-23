@@ -8,6 +8,7 @@ import (
 
 	"rfid-backend/utils"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -26,6 +27,7 @@ type Config struct {
 	ContactFilterQuery      string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
 	WildApricotApiKey       string
 	WildApricotWebhookToken string
+	log                     *logrus.Logger
 }
 
 func init() {

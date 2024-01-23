@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"rfid-backend/config"
 	"rfid-backend/services"
@@ -10,19 +9,22 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type WebhooksHandler struct {
 	waService *services.WildApricotService
 	dbService *services.DBService
 	cfg       *config.Config
+	log       *logrus.Logger
 }
 
-func NewWebhooksHandler(waService *services.WildApricotService, dbService *services.DBService, cfg *config.Config) *WebhooksHandler {
+func NewWebhooksHandler(waService *services.WildApricotService, dbService *services.DBService, cfg *config.Config, logger *logrus.Logger) *WebhooksHandler {
 	return &WebhooksHandler{
 		waService: waService,
 		dbService: dbService,
 		cfg:       cfg,
+		log:       logger,
 	}
 }
 
@@ -83,19 +85,19 @@ func (wh *WebhooksHandler) handleContactModified(c *gin.Context, data webhooks.W
 
 	if contactParams.Action == "Changed" && contactParams.ProfileChanged == "True" {
 		contactId, _ := strconv.Atoi(contactParams.ContactId)
-		log.Printf("contactId: %d", contactId)
+		wh.log.Infof("contactId: %d", contactId)
 		contact, err := wh.waService.GetContact(contactId)
 		if err != nil {
-			log.Printf("Error fetching contact: %v", err)
+			wh.log.Errorf("Error fetching contact: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
 
 		if contact == nil {
-			log.Println("No contact found for provided ContactID")
+			wh.log.Error("No contact found for provided ContactID")
 		} else {
 			wh.dbService.ProcessContactWebhookTrainingData(*contactParams, *contact)
-			log.Printf("Webhook notification processed successfully")
+			wh.log.Infof("Webhook notification processed successfully")
 		}
 	}
 }
@@ -114,7 +116,7 @@ func (wh *WebhooksHandler) handleMembership(c *gin.Context, data webhooks.Webhoo
 			contactId, _ := strconv.Atoi(membershipParams.ContactId)
 			contact, err := wh.waService.GetContact(contactId)
 			if err != nil {
-				log.Printf("Error fetching contact: %v", err)
+				wh.log.Errorf("Error fetching contact: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 				return
 			}

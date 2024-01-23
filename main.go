@@ -37,6 +37,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	//_ "net/http/pprof"
 	"rfid-backend/config"
@@ -47,6 +48,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 const hackPghBanner = `
@@ -71,13 +73,17 @@ const hackPghBanner = `
 +------------------------------------------------------------------+
 `
 
-// // pprof monitoring, import '_ /net/http/pprof'
-//
-//	go func() {
-//		_ = http.ListenAndServe("0.0.0.0:8081", nil)
-//	}()
 func main() {
+	// // pprof monitoring, import '_ /net/http/pprof'
+	//
+	//	go func() {
+	//		_ = http.ListenAndServe("0.0.0.0:8081", nil)
+	//	}()
 	log.Print(hackPghBanner)
+
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.InfoLevel)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -85,70 +91,90 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
-	log.Printf("Certificate File: %s", cfg.CertFile)
-	log.Printf("Key File: %s", cfg.KeyFile)
+
+	// Database initialization
 	db, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		logger.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	wildApricotSvc := services.NewWildApricotService(cfg)
-	dbService := services.NewDBService(db, cfg)
+	// Initialize services with the logger
+	waService := services.NewWildApricotService(cfg, logger)
+	dbService := services.NewDBService(db, cfg, logger)
 
-	// Initialize Gin router
 	router := gin.Default()
-
-	// Static file serving for the web UI
+	router.Use(GinLogrus(logger), gin.Recovery())
 	router.Static("/", "web-ui")
+	api := router.Group("/api")
+	{
+		webhooksHandler := handlers.NewWebhooksHandler(waService, dbService, cfg, logger)
+		configHandler := handlers.NewConfigHandler(logger)
+		registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger)
 
-	// Setup handlers using Gin
-	configHandler := handlers.NewConfigHandler()
-	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService, cfg)
-	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg)
+		api.POST("/updateConfig", configHandler.UpdateConfig)
+		api.POST("/webhooks", webhooksHandler.HandleWebhook)
+		api.POST("/registerDevice", registrationHandler.HandleRegisterDevice)
+	}
 
-	router.POST("/api/updateConfig", configHandler.UpdateConfig)
-	router.POST("/api/webhooks", webhooksHandler.HandleWebhook)
-	router.POST("/api/registerDevice", registrationHandler.HandleRegisterDevice)
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+	})
 
-	go backgroundDatabaseUpdate(wildApricotSvc, dbService)
+	go backgroundDatabaseUpdate(waService, dbService, logger)
 
-	// Start the HTTPS server using Gin's router
-	log.Println("Starting HTTPS server on :443...")
+	logger.Info("Starting HTTPS server on :443...")
 	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
-		log.Fatalf("Failed to start HTTPS server: %v", err)
+		logger.Fatalf("Failed to start HTTPS server: %v", err)
 	}
 }
 
-func backgroundDatabaseUpdate(wildApricotSvc *services.WildApricotService, dbService *services.DBService) {
+func GinLogrus(logger *logrus.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		duration := time.Since(start)
+
+		logger.WithFields(logrus.Fields{
+			"status_code": c.Writer.Status(),
+			"method":      c.Request.Method,
+			"path":        c.Request.URL.Path,
+			"ip":          c.ClientIP(),
+			"user_agent":  c.Request.UserAgent(),
+			"latency":     duration,
+		}).Info("handled request")
+	}
+}
+
+func backgroundDatabaseUpdate(waService *services.WildApricotService, dbService *services.DBService, logger *logrus.Logger) {
 	// Run full database sync on startup then repeat on ticker interval
-	updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
+	updateEntireDatabaseFromWildApricot(waService, dbService, logger)
 
 	ticker := time.NewTicker(30 * time.Minute)
 	for range ticker.C {
-		updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
+		updateEntireDatabaseFromWildApricot(waService, dbService, logger)
 	}
 }
 
-func updateEntireDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService) {
-	log.Println("Fetching contacts from Wild Apricot and updating database...")
+func updateEntireDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService, logger *logrus.Logger) {
+	logger.Info("Fetching contacts from Wild Apricot and updating database...")
 	contacts, err := waService.GetContacts()
 	if err != nil {
-		log.Printf("Failed to fetch contacts: %v", err)
+		logger.Errorf("Failed to fetch contacts: %v", err)
 		return
 	}
 
 	if len(contacts) <= 0 {
-		log.Println("No contacts to process from Wild Apricot. Sleeping...")
+		logger.Info("No contacts to process from Wild Apricot. Sleeping...")
 		return
 	}
 
 	if err = dbService.ProcessContactsData(contacts); err != nil {
-		log.Printf("Failed to update database: %v", err)
+		logger.Errorf("Failed to update database: %v", err)
 		return
 	} else {
-		log.Println("Latest Wild Apricot contacts successfully processed.")
+		logger.Info("Latest Wild Apricot contacts successfully processed.")
 	}
 
 }
