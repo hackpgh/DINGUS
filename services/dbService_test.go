@@ -39,7 +39,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	// Create SafetyTrainings table
 	_, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS trainings (
-            training_name TEXT PRIMARY KEY
+            label TEXT PRIMARY KEY
         );`)
 	require.NoError(t, err)
 
@@ -47,10 +47,10 @@ func setupTestDB(t *testing.T) *sql.DB {
 	_, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS members_trainings_link (
             tag_id INTEGER NOT NULL,
-            training_name TEXT NOT NULL,
+            label TEXT NOT NULL,
             FOREIGN KEY (tag_id) REFERENCES members(tag_id),
-            FOREIGN KEY (training_name) REFERENCES trainings(training_name),
-            UNIQUE (tag_id, training_name)
+            FOREIGN KEY (label) REFERENCES trainings(label),
+            UNIQUE (tag_id, label)
         );`)
 	require.NoError(t, err)
 
@@ -88,7 +88,7 @@ func TestGetRFIDsForMachine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Insert test data into members_trainings_link table
-	_, err = db.Exec("INSERT INTO members_trainings_link (tag_id, training_name) VALUES (12345, 'MachineA'), (67890, 'MachineA')")
+	_, err = db.Exec("INSERT INTO members_trainings_link (tag_id, label) VALUES (12345, 'MachineA'), (67890, 'MachineA')")
 	require.NoError(t, err)
 
 	dbService := NewDBService(db, nil)

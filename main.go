@@ -101,20 +101,19 @@ func main() {
 
 	webhooksHandler := handlers.NewWebhooksHandler(wildApricotSvc, dbService, cfg)
 
-	// Configuration web-ui endpoint
+	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg)
+
 	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
 	http.Handle("/", http.FileServer(http.Dir("web-ui")))
 
-	// Configuration management endpoints
-	http.HandleFunc("/api/getConfig", configHandler.GetConfig)
 	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
 
-	// Wild Apricot webhooks endpoint
 	http.HandleFunc("/api/webhooks", webhooksHandler.HandleWebhook())
 
-	// Start background task to fetch contacts and update the database
+	http.HandleFunc("/api/registerDevice", registrationHandler.HandleRegisterDevice())
+
 	go func() {
-		// Run full database sync on startup
+		// Run full database sync on startup then repeat on ticker interval
 		updateEntireDatabaseFromWildApricot(wildApricotSvc, dbService)
 
 		ticker := time.NewTicker(30 * time.Minute)

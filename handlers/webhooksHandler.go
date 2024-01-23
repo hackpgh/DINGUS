@@ -72,9 +72,9 @@ func (wh *WebhooksHandler) Process(w http.ResponseWriter, data webhooks.Webhook)
 		}
 
 		if contactParams.Action == "Changed" && contactParams.ProfileChanged == "True" {
-			contact_id, _ := strconv.Atoi(contactParams.ContactId)
-			log.Printf("contact_id: %d", contact_id)
-			contact, err := wh.waService.GetContact(contact_id)
+			contactId, _ := strconv.Atoi(contactParams.ContactId)
+			log.Printf("contactId: %d", contactId)
+			contact, err := wh.waService.GetContact(contactId)
 			if err != nil {
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				log.Printf("Error fetching contact: %v", err)
@@ -99,8 +99,8 @@ func (wh *WebhooksHandler) Process(w http.ResponseWriter, data webhooks.Webhook)
 
 		if status != webhooks.StatusNOOP {
 			if status == webhooks.StatusLapsed || status == webhooks.StatusActive {
-				contact_id, _ := strconv.Atoi(membershipParams.ContactId)
-				contact, err := wh.waService.GetContact(contact_id)
+				contactId, _ := strconv.Atoi(membershipParams.ContactId)
+				contact, err := wh.waService.GetContact(contactId)
 				if err != nil {
 					http.Error(w, "Internal server error", http.StatusInternalServerError)
 					log.Printf("Error fetching contact: %v", err)

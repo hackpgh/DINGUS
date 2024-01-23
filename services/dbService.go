@@ -21,8 +21,8 @@ func NewDBService(db *sql.DB, cfg *config.Config) *DBService {
 	return &DBService{db: db, cfg: cfg}
 }
 
-func (s *DBService) GetTagIdsForMachine(machineName string) ([]uint32, error) {
-	return s.fetchTagIds(GetTagIdsForMachineQuery, machineName)
+func (s *DBService) GetTagIdsForTraining(machineName string) ([]uint32, error) {
+	return s.fetchTagIds(GetTagIdsForTrainingQuery, machineName)
 }
 
 func (s *DBService) GetAllTagIds() ([]uint32, error) {
@@ -49,6 +49,21 @@ func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, er
 	}
 
 	return tagIds, nil
+}
+
+func (s *DBService) GetTraining(label string) (string, error) {
+	row, err := s.db.Query(GetTraining, label)
+	if err != nil {
+		return "", err
+	}
+
+	var training string
+	if err := row.Scan(&training); err != nil {
+		log.Printf("No Training found for %s", label)
+		return "", err
+	}
+
+	return training, nil
 }
 
 // service starts with this func
@@ -171,6 +186,42 @@ func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32)
 			return err
 		}
 	}
+	return nil
+}
+
+func (s *DBService) InsertDevice(ipAddress string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	deviceStmt, err := tx.Prepare(InsertDeviceQuery)
+	if err != nil {
+		return err
+	}
+	defer deviceStmt.Close()
+
+	if _, err := deviceStmt.Exec(ipAddress); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *DBService) InsertDeviceTrainingLink(ipAddress string, trainingLabel string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	deviceStmt, err := tx.Prepare(InsertDeviceTrainingLinkQuery)
+	if err != nil {
+		return err
+	}
+	defer deviceStmt.Close()
+
+	if _, err := deviceStmt.Exec(ipAddress); err != nil {
+		return err
+	}
+
 	return nil
 }
 
