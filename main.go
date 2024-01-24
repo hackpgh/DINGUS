@@ -110,8 +110,6 @@ func main() {
 	router := gin.Default()
 	router.Use(GinLogrus(logger), gin.Recovery())
 
-	router.LoadHTMLGlob("web-ui/templates/*")
-
 	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger)
@@ -126,14 +124,39 @@ func main() {
 		api.POST("/registerDevice", registrationHandler.HandleRegisterDevice)
 		api.POST("/updateDeviceAssignments", registrationHandler.UpdateDeviceAssignments)
 	}
-	router.GET("/deviceManagement", registrationHandler.ServeDeviceManagementPage)
-	router.Static("/changeSettings", "web-ui")
+
+	router.Static("/css", "./web-ui/css")
+	router.Static("/js", "./web-ui/js")
+	router.Static("/assets", "./web-ui/assets")
+	logger.Info("Static files are set up")
+	router.LoadHTMLGlob("web-ui/templates/*")
+
+	webUI := router.Group("/web-ui")
+	{
+		webUI.GET("/home", func(c *gin.Context) {
+			logger.Info("Serving the home page")
+			c.HTML(http.StatusOK, "home.tmpl", nil)
+			if c.Writer.Status() == http.StatusOK {
+				logger.Info("Home page rendered successfully")
+			} else {
+				logger.Errorf("Failed to render the home page, status code: %d", c.Writer.Status())
+			}
+		})
+		webUI.GET("/configManagement", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "configManagement.tmpl", gin.H{"title": "Configuration Management", "head": `	<link href=\"/css/configManagement.css\" rel=\"stylesheet\">`})
+		})
+		webUI.GET("/deviceManagement", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "deviceManagement.tmpl", gin.H{"title": "Device Management", "head": `	<link href=\"/css/deviceManagement.css\" rel=\"stylesheet\">`})
+		})
+	}
+
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 	})
 
 	go backgroundDatabaseUpdate(waService, dbService, logger)
 
+	logger.Infof("Gin mode: %s", gin.Mode())
 	logger.Info("Starting HTTPS server on :443...")
 	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {

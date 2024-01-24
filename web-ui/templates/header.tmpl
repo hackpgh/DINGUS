@@ -1,0 +1,32 @@
+{{ define "header.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>{{ .title }}</title>
+    <link href="/css/deviceManagement.css" rel="stylesheet">
+    <link href="/css/configManagement.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/web-ui/home">
+            <img src="/assets/HackPGH Round Logo B_W Wide.png" alt="HackPGH Logo" style="height: 30px;">
+            RFID Backend
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/web-ui/configManagement">Config Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/web-ui/deviceManagement">Device Management</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+{{ end }}
