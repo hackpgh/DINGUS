@@ -1,0 +1,43 @@
+{{ template "header.tmpl" . }}
+
+{{ define "title" }}Device Management - DINGUS{{ end }}
+
+<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <!-- Toast content -->
+</div>
+    
+<div class="container mt-5">
+    <h2 class="mb-4">Device Management</h2>
+    <form id="deviceManagementForm" action="/api/updateDeviceAssignments" method="POST">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Device IP</th>
+                        <th>Training Label</th>
+                    </tr>
+                </thead>
+                <tbody id="deviceList">
+                    {{range .Devices}}
+                    <tr>
+                        <td>{{.}}</td>
+                        <td>
+                            <select name="{{.}}" class="form-control">
+                                <option value="">Select Training</option>
+                                {{range $.Trainings}}
+                                <option value="{{.}}">{{.}}</option>
+                                {{end}}
+                            </select>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<script src="/js/deviceManagement.js"></script>
+
+{{ template "footer.tmpl" . }}

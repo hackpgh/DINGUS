@@ -1,37 +1,48 @@
-// configHandler.go
-
 package handlers
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"rfid-backend/config"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
-type ConfigHandler struct{}
-
-func NewConfigHandler() *ConfigHandler {
-	return &ConfigHandler{}
+type ConfigHandler struct {
+	logger *logrus.Logger
 }
 
-func (ch *ConfigHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
-	cfg := config.LoadConfig()
-	json.NewEncoder(w).Encode(cfg)
+// Updated constructor to accept a Logrus logger
+func NewConfigHandler(logger *logrus.Logger) *ConfigHandler {
+	return &ConfigHandler{
+		logger: logger,
+	}
 }
 
-func (ch *ConfigHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
-	body, _ := ioutil.ReadAll(r.Body)
-
-	// Decode the JSON body into the newConfig struct
+// @Summary Update config
+// @Description Updates the server's config yaml file
+// @ID update-config
+// @Accept  json
+// @Produce  json
+// @Success 200  {string}  string "Config updated successfully"
+// @Failure 400  {string}  string "Bad Request"
+// @Failure 500  {string}  string "Internal Server Error"
+// @Router /api/updateConfig [post]
+func (ch *ConfigHandler) UpdateConfig(c *gin.Context) {
 	var newConfig config.Config
-	err := json.Unmarshal(body, &newConfig)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if err := c.BindJSON(&newConfig); err != nil {
+		ch.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to bind JSON for new configuration")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update the config file
-	config.UpdateConfigFile(newConfig)
-	w.WriteHeader(http.StatusOK)
+	if err := config.UpdateConfigFile(newConfig); err != nil {
+		ch.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to update configuration file")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update configuration"})
+		return
+	}
+
+	ch.logger.Info("Configuration updated successfully")
+	c.Status(http.StatusOK)
 }

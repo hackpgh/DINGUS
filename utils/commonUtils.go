@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"log"
 	"sync"
 )
 
@@ -9,8 +8,8 @@ import (
 // A singleton instance is created only once and the same instance is returned
 // on subsequent calls.
 type Singleton struct {
-	once sync.Once   // Ensures that the object is initialized only once.
-	obj  interface{} // The singleton object.
+	once sync.Once
+	obj  interface{}
 }
 
 func NewSingleton(obj interface{}) *Singleton {
@@ -20,7 +19,6 @@ func NewSingleton(obj interface{}) *Singleton {
 func (s *Singleton) Get(initialize func() interface{}) interface{} {
 	s.once.Do(func() {
 		s.obj = initialize()
-		log.Println("Singleton object initialized")
 	})
 	return s.obj
 }

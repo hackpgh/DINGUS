@@ -1,0 +1,27 @@
+{{ template "header.tmpl" . }}
+
+{{ define "title" }}Home Page - DINGUS{{ end }}
+
+<div class="container mt-5">
+    <h1>Welcome to DINGUS</h1>
+    <p>This server provides comprehensive backend services for RFID-based access control systems.</p>
+    
+    <h2>What is DINGUS?</h2>
+    <p>DINGUS (Deployable Integrated Network-Generalized User Selector) is HackPGH's access control solution. It is designed to integrate seamlessly with Wild Apricot API and numerous Wiegard26 RFID reader components.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+        <li>Integration with Wild Apricot API & Webhooks for tag and training sign-off authorization.</li>
+        <li>Persistent SQLite database synchronized with WA API every 30 minutes.</li>
+        <li>Event-based sync: Webhook support for `Contact` and `Membership` Triggers</li>
+        <li>Web UI configuration and management screens</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <p>You can check out the documentation available on the GitHub repository. The server can be configured and managed through this site.</p>
+
+    <h2>Contributing to DINGUS</h2>
+    <p>If you're interested in contributing to the DINGUS project, or if you want to explore its codebase, visit our <a href="https://github.com/hackpgh/dingus" target="_blank">GitHub repository</a>.</p>
+</div>
+
+{{ template "footer.tmpl" . }}
