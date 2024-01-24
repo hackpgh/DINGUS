@@ -38,23 +38,23 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
-	//_ "net/http/pprof"
-
+	"rfid-backend/auth"
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
 	"rfid-backend/services"
-	"time"
 
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
-	_ "rfid-backend/docs"
-
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const hackPghBanner = `
@@ -78,6 +78,17 @@ const hackPghBanner = `
 | Want to contribute? https://github.com/hackpgh/rfid-backend      |
 +------------------------------------------------------------------+
 `
+
+var oauthConf = &oauth2.Config{
+	ClientID:     "your-client-id",
+	ClientSecret: "your-client-secret",
+	RedirectURL:  "https://yourapp.com/auth/callback",
+	Scopes:       []string{"scope1", "scope2"},
+	Endpoint: oauth2.Endpoint{
+		AuthURL:  "provider-auth-url",
+		TokenURL: "provider-token-url",
+	},
+}
 
 func main() {
 	// // pprof monitoring, import '_ /net/http/pprof'
@@ -104,11 +115,20 @@ func main() {
 	}
 	defer db.Close()
 
+	router := gin.Default()
+	store := cookie.NewStore([]byte("secret"))
+	router.Use(sessions.Sessions("mysession", store))
+
 	waService := services.NewWildApricotService(cfg, logger)
 	dbService := services.NewDBService(db, cfg, logger)
 
-	router := gin.Default()
-	router.Use(GinLogrus(logger), gin.Recovery())
+	// Set up OAuth routes
+	auth.Initialize(oauthConf, logger)
+	authGroup := router.Group("/auth")
+	{
+		authGroup.GET("/login", auth.StartOAuthFlow)
+		authGroup.GET("/callback", auth.OAuthCallback)
+	}
 
 	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
@@ -149,6 +169,8 @@ func main() {
 			c.HTML(http.StatusOK, "deviceManagement.tmpl", gin.H{"title": "Device Management", "head": `	<link href=\"/css/deviceManagement.css\" rel=\"stylesheet\">`})
 		})
 	}
+
+	webUI.Use(auth.StartOAuthFlow)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
