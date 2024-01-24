@@ -7,10 +7,20 @@ const (
         WHERE label = ?;
     `
 
-	GetTraining = `
+	GetTrainingQuery = `
 		SELECT label
 		FROM trainings
 		WHERE label = ?
+	`
+
+	GetAllTrainingsQuery = `
+		SELECT label
+		FROM trainings
+	`
+
+	GetAllDevicesQuery = `
+		SELECT ip_address
+		FROM devices;
 	`
 
 	GetAllTagIdsQuery = `
@@ -35,21 +45,27 @@ const (
     `
 
 	InsertDeviceQuery = `
-        INSERT OR IGNORE INTO devices (ip_address)
-        VALUES (?);
+        INSERT OR IGNORE INTO devices (ip_address, requires_training)
+        VALUES (?, ?);
     `
 
 	InsertDeviceTrainingLinkQuery = `
-		INSERT OR IGNORE INTO devices_trainings_link (ip_address, label)
+		INSERT INTO devices_trainings_link (ip_address, label)
 		VALUES (?, ?)
-		ON CONFLICT(label) DO UPDATE SET ip_address = ?;
+		ON CONFLICT(ip_address, label) DO UPDATE 
+		SET ip_address = EXCLUDED.ip_address;
 	`
 
-	deleteInactiveMembersQuery = `
+	DeleteInactiveMembersQuery = `
         DELETE FROM members WHERE contact_id NOT IN (%s)
     `
 
-	deleteLapsedMembersQuery = `
+	DeleteLapsedMembersQuery = `
         DELETE FROM members WHERE contact_id = %s
     `
+
+	DeleteDeviceTrainingLinkQuery = `
+		DELETE FROM devices_trainings_link
+		WHERE ip_address = ?;
+	`
 )

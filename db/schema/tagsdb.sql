@@ -8,7 +8,7 @@ CREATE INDEX IF NOT EXISTS idx_members_tag_id ON members(tag_id);
 
 
 CREATE TABLE IF NOT EXISTS devices (
-    ip_address TEXT NOT NULL,
+    ip_address TEXT NOT NULL UNIQUE,
     requires_training INTEGER NOT NULL
 );
 
@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS members_trainings_link (
 );
 
 CREATE TABLE IF NOT EXISTS devices_trainings_link (
-    label TEXT NOT NULL,
     ip_address TEXT NOT NULL,
+    label TEXT NOT NULL,
     FOREIGN KEY (label) REFERENCES trainings(label),
     FOREIGN KEY (ip_address) REFERENCES devices(ip_address),
-    UNIQUE (label, ip_address)
-)
+    PRIMARY KEY (label, ip_address)
+);

@@ -41,7 +41,6 @@ func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, er
 	}
 	defer rows.Close()
 
-	// Iterate over the rows and scan the TagId values
 	for rows.Next() {
 		var tagId uint32
 		if err := rows.Scan(&tagId); err != nil {
@@ -54,7 +53,7 @@ func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, er
 }
 
 func (s *DBService) GetTraining(label string) (string, error) {
-	row, err := s.db.Query(GetTraining, label)
+	row, err := s.db.Query(GetTrainingQuery, label)
 	if err != nil {
 		return "", err
 	}
@@ -66,6 +65,46 @@ func (s *DBService) GetTraining(label string) (string, error) {
 	}
 
 	return training, nil
+}
+
+func (s *DBService) GetAllTrainings() ([]string, error) {
+	var devices []string
+
+	rows, err := s.db.Query(GetAllTrainingsQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err != nil {
+			return nil, err
+		}
+		devices = append(devices, d)
+	}
+
+	return devices, nil
+}
+
+func (s *DBService) GetDevices() ([]string, error) {
+	var devices []string
+
+	rows, err := s.db.Query(GetAllDevicesQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err != nil {
+			return nil, err
+		}
+		devices = append(devices, d)
+	}
+
+	return devices, nil
 }
 
 // service starts with this func
@@ -191,7 +230,7 @@ func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32)
 	return nil
 }
 
-func (s *DBService) InsertDevice(ipAddress string) error {
+func (s *DBService) InsertDevice(ip string, requiresTraining int) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -202,29 +241,44 @@ func (s *DBService) InsertDevice(ipAddress string) error {
 	}
 	defer deviceStmt.Close()
 
-	if _, err := deviceStmt.Exec(ipAddress); err != nil {
+	if _, err := deviceStmt.Exec(ip, requiresTraining); err != nil {
 		return err
 	}
-
-	return nil
+	s.log.Info("Inserted device successfully")
+	return tx.Commit()
 }
 
-func (s *DBService) InsertDeviceTrainingLink(ipAddress string, trainingLabel string) error {
+func (s *DBService) InsertDeviceTrainingLink(ip, trainingLabel string) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	deviceStmt, err := tx.Prepare(InsertDeviceTrainingLinkQuery)
+
+	deleteStmt, err := tx.Prepare("DELETE FROM devices_trainings_link WHERE ip_address = ?")
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
-	defer deviceStmt.Close()
+	defer deleteStmt.Close()
 
-	if _, err := deviceStmt.Exec(ipAddress); err != nil {
+	if _, err := deleteStmt.Exec(ip); err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	return nil
+	insertStmt, err := tx.Prepare("INSERT INTO devices_trainings_link (ip_address, label) VALUES (?, ?)")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer insertStmt.Close()
+
+	if _, err := insertStmt.Exec(ip, trainingLabel); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string][]uint32) error {
@@ -251,20 +305,31 @@ func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allContacts []int) error {
 		params = append(params, strconv.Itoa(contactId))
 	}
 	all_contactIds := strings.Join(params, ",")
-	query := fmt.Sprintf(deleteInactiveMembersQuery, all_contactIds)
+	query := fmt.Sprintf(DeleteInactiveMembersQuery, all_contactIds)
 
 	_, err := tx.Exec(query)
 	return err
 }
 
 func (s *DBService) deleteLapsedMember(tx *sql.Tx, contactId int) error {
-	query := fmt.Sprintf(deleteLapsedMembersQuery, strconv.Itoa(int(contactId)))
+	query := fmt.Sprintf(DeleteLapsedMembersQuery, strconv.Itoa(int(contactId)))
 
 	_, err := tx.Exec(query)
 	return err
 }
 
-func (s *DBService) insertTrainingsLink(tx *sql.Tx, tagId uint32, trainings []string) error {
+func (s *DBService) DeleteDeviceTrainingLink(ip string) error {
+	stmt, err := s.db.Prepare(DeleteDeviceTrainingLinkQuery)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(ip)
+	return err
+}
+
+func (s *DBService) insertMemberTrainingLink(tx *sql.Tx, tagId uint32, trainings []string) error {
 	linkStmt, err := tx.Prepare(InsertMemberTrainingLinkQuery)
 	if err != nil {
 		return err
@@ -308,7 +373,7 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 
 	// Handle trainings changes
 	s.log.Infof("trainingLabels: %+v", trainingLabels)
-	if err := s.insertTrainingsLink(tx, tagId, trainingLabels); err != nil {
+	if err := s.insertMemberTrainingLink(tx, tagId, trainingLabels); err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -40,18 +40,21 @@ import (
 	"net/http"
 
 	//_ "net/http/pprof"
-	"github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"rfid-backend/config"
 	"rfid-backend/db"
 	"rfid-backend/handlers"
 	"rfid-backend/services"
 	"time"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "rfid-backend/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
-	_ "rfid-backend/docs"
 )
 
 const hackPghBanner = `
@@ -95,32 +98,35 @@ func main() {
 
 	cfg := config.LoadConfig()
 
-	// Database initialization
 	db, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
 		logger.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	// Initialize services with the logger
 	waService := services.NewWildApricotService(cfg, logger)
 	dbService := services.NewDBService(db, cfg, logger)
 
 	router := gin.Default()
 	router.Use(GinLogrus(logger), gin.Recovery())
+
+	router.LoadHTMLGlob("web-ui/templates/*")
+
 	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger)
 
 	api := router.Group("/api")
 	{
 		webhooksHandler := handlers.NewWebhooksHandler(waService, dbService, cfg, logger)
 		configHandler := handlers.NewConfigHandler(logger)
-		registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger)
 
 		api.POST("/updateConfig", configHandler.UpdateConfig)
 		api.POST("/webhooks", webhooksHandler.HandleWebhook)
 		api.POST("/registerDevice", registrationHandler.HandleRegisterDevice)
+		api.POST("/updateDeviceAssignments", registrationHandler.UpdateDeviceAssignments)
 	}
+	router.GET("/deviceManagement", registrationHandler.ServeDeviceManagementPage)
 	router.Static("/changeSettings", "web-ui")
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
