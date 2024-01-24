@@ -1,6 +1,6 @@
-# Contributing to RFID Backend Server
+# Contributing to DINGUS
 
-Thank you for considering contributing to HackPGH'S RFID Backend Server! We welcome contributions from the community to help improve our Go RFID backend Server project. Before you start contributing, please take a moment to read and understand the following guidelines.
+Thank you for considering contributing to HackPGH'S DINGUS! We welcome contributions from the community to help improve our Go DINGUS project. Before you start contributing, please take a moment to read and understand the following guidelines.
 
 ## Getting Started
 
@@ -38,4 +38,4 @@ Be excellent to each other. If you encounter any bugs, have questions, or want t
 
 By contributing to this project, you agree that your contributions will be licensed under the [MIT License](LICENSE).
 
-Thank you for helping make HackPGH'S RFID Backend Server better!
+Thank you for helping make HackPGH'S DINGUS better!

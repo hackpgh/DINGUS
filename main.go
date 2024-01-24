@@ -1,5 +1,5 @@
 /*
-RFID Backend Server
+DINGUS
 ===================
 This Go server provides backend services for an RFID-based access control system
 for HackPGH's magnetic locks and machines that require Safety Training sign-offs.
@@ -71,7 +71,7 @@ const hackPghBanner = `
 |                                                                  |
 |                   Be Excellent to Each Other                     |
 +------------------------------------------------------------------+
-| RFID Backend Server for HackPGH                                  |
+| DINGUS for HackPGH                                  |
 | - Configure via 'config.yml' or '/' endpoint                     |
 | - Serves '/api/doorCache' & '/api/machineCache?machineName= '    |
 | - Ensure SSL certificates are in place for HTTPS.                |
