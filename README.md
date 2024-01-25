@@ -16,7 +16,7 @@ ZZZzz /,`.-'`'    -.  ;-;;,_
      |,4-  ) )-,_. ,\ (  `'-'
     '---''(_/--'  `-'\_)  
 ```
-#### TL:DR
+### TL:DR
 This project is an RFID access control system's backend server written in Golang for the HackPGH makerspace. It uses Wild Apricot API as its source of truth for member data. 
 
 ## Features
