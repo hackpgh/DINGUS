@@ -5,17 +5,18 @@ Thank you for considering contributing to HackPGH'S DINGUS! We welcome contribut
 ## Getting Started
 
 - Ensure you have [Go](https://golang.org/) installed on your local machine.
-- Fork the [repository](https://github.com/hackpgh/rfid-backend) on GitHub.
-- Clone your fork locally using `git clone https://github.com/hackpgh/rfid-backend.git`.
+- Fork the [repository](https://github.com/hackpgh/DINGUS) on GitHub.
+- Clone your fork locally using `git clone https://github.com/hackpgh/DINGUS.git`.
 
 ## Development Process
 
-1. Create a new branch for your work: `git checkout -b feature-name`.
-2. Make your changes, ensuring they adhere to our coding standards.
-3. Write unit tests for your code changes if applicable.
-4. Commit your changes with clear and concise messages: `git commit -m "Add feature XYZ"`.
-5. Push your branch to your fork on GitHub: `git push origin feature-name`.
-6. Create a pull request (PR) from your branch to the main repository's `main` branch on GitHub.
+1. Switch to development branch: `git checkout development`
+3. Create a new branch for your work: `git checkout -b feature-name`.
+4. Make your changes, ensuring they adhere to our coding standards.
+5. Write unit tests for your code changes if applicable.
+6. Commit your changes with clear and concise messages: `git commit -m "Add feature XYZ"`.
+7. Push your branch to your fork on GitHub: `git push origin feature-name`.
+8. Create a pull request (PR) from your branch to the repository's `development` branch on GitHub.
 
 ## Pull Request Guidelines
 
@@ -32,7 +33,7 @@ Thank you for considering contributing to HackPGH'S DINGUS! We welcome contribut
 
 ## Reporting Issues
 
-Be excellent to each other. If you encounter any bugs, have questions, or want to suggest improvements, please open an issue on the [issue tracker](https://github.com/hackpgh/rfid-backend/issues).
+Be excellent to each other. If you encounter any bugs, have questions, or want to suggest improvements, please open an issue on the [issue tracker](https://github.com/hackpgh/DINGUS/issues).
 
 ## License
 
