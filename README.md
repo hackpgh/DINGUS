@@ -51,8 +51,8 @@ This project is an RFID access control system's backend server written in Golang
 
 ### Prerequisites
 
--   Go (latest stable version)
--   Access to Wild Apricot API
+-   [Go](https://go.dev/doc/install) (latest stable version)
+-   Access to [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api)
 -   SSL certificate and key
 -   GCC for SQLite Go package compilation (requires cgo)
 
@@ -63,9 +63,54 @@ To successfully build and run this project, `CGO_ENABLED` must be set to `1`. Th
 -   **Bash**: `export CGO_ENABLED=1`
 -   **PowerShell**: `set CGO_ENABLED=1`
 
+## Generating SSL Certificates for HTTPS
+
+### Prerequisites
+
+-   OpenSSL installed on your system. For Windows, you can download it from [here](https://indy.fulgan.com/SSL/). Most Linux distributions and MacOS have it pre-installed.
+
+### Instructions
+
+#### For Bash (Linux/MacOS)
+
+1.  Open a terminal.
+2.  Run the following command to generate a private key and a certificate:
+
+    `openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` 
+    
+3.  You will be prompted to enter details for the certificate and a passphrase for the private key.
+4.  Remove the passphrase from the private key (optional):
+    
+    `openssl rsa -in key.pem -out key.unencrypted.pem`
+    
+    `mv key.unencrypted.pem key.pem` 
+    
+
+#### For Windows
+
+1.  [Download](https://indy.fulgan.com/SSL/) and install OpenSSL from the provided link.
+2.  Open OpenSSL via the command prompt (you might need to navigate to the OpenSSL `bin` directory).
+3.  Run the following command:
+
+    `openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` 
+    
+4.  Enter the required information when prompted, and set a passphrase for the private key.
+5.  Remove the passphrase from the private key (optional):
+
+    `openssl rsa -in key.pem -out key.unencrypted.pem`
+    
+    `move key.unencrypted.pem key.pem` 
+    
+
+After generating the `key.pem` and `cert.pem` files, place them in the appropriate directory as specified in your `config.yaml` file for the server to use them for HTTPS.
+
+### Configuring the Server
+
+Update the `config.yaml` file to point to the location of your newly generated `cert.pem` and `key.pem` files under the SSL certificate and key file paths, respectively.
+
 ### Running the Server
 
-Start the server with `go run main.go`. It listens on port 443, synchronizing data periodically with the Wild Apricot API.
+You can start the server with `go run main.go`
 
 ### Accessing Swagger Documentation
 
