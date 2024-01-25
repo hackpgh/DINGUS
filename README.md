@@ -21,75 +21,65 @@ This project is an RFID access control system's backend server written in Golang
 
 ## Features
 
--   **Wild Apricot Support:** Fetches [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
--   **SQLite Database:** Maintains a synchronised database of tag ids and safety training sign-offs.
--   **Automated Synchronization:** Configurable interval for updating the database with the latest WA API data. Supports WA Webhooks.
--   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
--   **Configuration Web UI:** Change server settings via web interface hosted at `https:/localhost/` (may require reboot).
+-   **Wild Apricot Integration**: Synchronizes member [contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
+-   **Distributed RFID Access Control**: Synchronizes authorization data caches for Wiegand26 RFID tag readers.
+-   **SSO OAuth2 Authentication**: Implements Wild Apricot [SSO OAuth2](https://gethelp.wildapricot.com/en/articles/200-single-sign-on-service-sso#overview) for secure access to web-based interfaces.
+-   **SQLite Database**: Maintains persistent data, including Wild Apricot Contact IDs, RFID tags and safety training records.
+-   **Automated Data Sync**: Regular updates from the Wild Apricot API as well as real-time Contact and Membership webhook support.
+-   **Secure Web UI**: Web interface for configuration and device management, secured via HTTPS.
+
+## Web UI Screens
+
+1.  **Configuration Screen**: Modify server settings, effective upon reboot.
+2.  **Device Management**: Monitor and manage RFID devices.
+3.  **User Authentication**: Secured with Wild Apricot SSO OAuth2, restricting access to authorized users.
 
 ## Project Structure
 
--   `/config`: Configuration file loading logic.
--   `/db`: Database initialization and schema management.
--   `/db/schema`: Database schema files.
--   `/db/data`: Default `tagsdb.sqlite` destination
--   `/handlers`: HTTP handlers for server endpoints.
--   `/models`: Data structures for database entities and API responses.
--   `/services`: Business logic including API and database operations.
--   `/utils`: Utility functions and singleton management.
--   `/web-ui`: Web assets for config update UI
+-   `auth`: Authentication logic, including OAuth2 SSO.
+-   `config`: Configuration file parsing and loading.
+-   `db`: Database initialization and schema management.
+-   `handlers`: HTTP server endpoint handlers.
+-   `models`: Database and API response structures.
+-   `services`: Business logic for API and database interactions.
+-   `setup`: Server and component initialization.
+-   `utils`: General utility functions.
+-   `webhooks`: Wild Apricot webhook handling.
+-   `web-ui`: Frontend assets.
 
 ## Getting Started
 
 ### Prerequisites
 
 -   Go (latest stable version)
--   Access to Wild Apricot API with a valid API key
--   SSL certificate and key for HTTPS
--   GCC (GNU Compiler Collection) - Required for building SQLite Go package which uses cgo.
+-   Access to Wild Apricot API
+-   SSL certificate and key
+-   GCC for SQLite Go package compilation (requires cgo)
 
-### Setting up GCC
+### Setting CGO_ENABLED
 
-Before you can build and run this project, make sure you have GCC installed on your system. You can typically install GCC on Linux-based systems using package managers like `apt-get` (for Debian/Ubuntu) or `yum` (for CentOS/RHEL). For macOS, you can use Homebrew. MinGW-w64 is recommended for Windows.
+To successfully build and run this project, `CGO_ENABLED` must be set to `1`. This allows for the compilation of C code, a requirement for the SQLite package used in the project.
 
-### Setting the `CGO_ENABLED` Environment Variable
-
-To build and run this project successfully, you need to set the `CGO_ENABLED` environment variable to `1`.
-
-You can set `CGO_ENABLED` temporarily in your terminal by running the following command:
-#### Bash command
-
-`export CGO_ENABLED=1` 
-
-#### PowerShell command
-
-`set CGO_ENABLED=1`
-
-### Configuration
-
-Modify the `config.yml` file in the `/config` directory to set the following parameters:
-
--   Database path - Default: `./db/data`
--   Wild Apricot account ID
--   SSL certificate and key file paths
+-   **Bash**: `export CGO_ENABLED=1`
+-   **PowerShell**: `set CGO_ENABLED=1`
 
 ### Running the Server
 
-To start the server, run:
+Start the server with `go run main.go`. It listens on port 443, synchronizing data periodically with the Wild Apricot API.
 
-`go run main.go` 
+### Accessing Swagger Documentation
 
-The server will start listening for requests on port 443 and periodically update the database with data from the Wild Apricot API.
+Swagger documentation can be accessed by navigating to `https://localhost/swagger/index.html` once the server is running. This provides an interactive UI to explore and test the available API endpoints.
 
-### Running the Unit Tests
+### Running Unit Tests
 
-`go test`
+Run `go test` to execute the unit tests.
 
 ## Endpoints
 
 -   `/`: Update Configuration web UI. Server reboot required for changes to take effect.
 -   `/webhooks`: Wild Apricot webhooks endpoint.
--   `/registerDevice`: Process registration requests from ESP controllers on the network.
+-   `/registerDevice`: DEPRECATED - Process registration requests from ESP controllers on the network.
 
 ## Contributing
 
