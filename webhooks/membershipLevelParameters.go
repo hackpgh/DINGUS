@@ -20,7 +20,6 @@ const (
 // LevelType represents the type of membership level.
 type LevelType int
 
-// Enum-like constants for LevelType.
 const (
 	TypeBundle     LevelType = 1
 	TypeIndividual LevelType = 2

@@ -17,8 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// WildApricotService provides functionalities to interact with the Wild Apricot API.
-// It handles the retrieval of contact data and manages API token refresh.
 type WildApricotService struct {
 	Client             *http.Client
 	cfg                *config.Config
@@ -29,10 +27,8 @@ type WildApricotService struct {
 	log                *logrus.Logger
 }
 
-// wildApricotSvc is a singleton instance of WildApricotService.
 var wildApricotSvc = utils.NewSingleton(&WildApricotService{})
 
-// NewWildApricotService initializes and retrieves a singleton instance of WildApricotService.
 func NewWildApricotService(cfg *config.Config, logger *logrus.Logger) *WildApricotService {
 	return wildApricotSvc.Get(func() interface{} {
 		s := &WildApricotService{
@@ -49,13 +45,11 @@ func NewWildApricotService(cfg *config.Config, logger *logrus.Logger) *WildApric
 	}).(*WildApricotService)
 }
 
-// readResponseBody reads and returns the body of an HTTP response.
 func readResponseBody(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
 	return ioutil.ReadAll(resp.Body)
 }
 
-// handleHTTPError checks for HTTP errors and formats a standard error message.
 func handleHTTPError(resp *http.Response) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
@@ -63,24 +57,20 @@ func handleHTTPError(resp *http.Response) error {
 	return nil
 }
 
-// logError formats and logs the error messages.
 func (s *WildApricotService) logError(context string, err error) {
 	if err != nil {
 		s.log.WithFields(logrus.Fields{"context": context, "error": err}).Error("Error occurred")
 	}
 }
 
-// buildURL constructs and returns a formatted URL string.
 func (s *WildApricotService) buildURL(pathFormat string, args ...interface{}) string {
 	return fmt.Sprintf(s.WildApricotApiBase+pathFormat, args...)
 }
 
-// unmarshalJSON is a utility function to unmarshal JSON into a provided struct.
 func unmarshalJSON(body []byte, target interface{}) error {
 	return json.Unmarshal(body, target)
 }
 
-// refreshTokenIfNeeded checks and refreshes the API token if needed.
 func (s *WildApricotService) refreshTokenIfNeeded() error {
 	if time.Now().After(s.TokenExpiry) || s.ApiToken == "" {
 		s.log.Info("Refreshing API token")
@@ -89,7 +79,6 @@ func (s *WildApricotService) refreshTokenIfNeeded() error {
 	return nil
 }
 
-// refreshApiToken handles the token refresh process.
 func (s *WildApricotService) refreshApiToken() error {
 	url := s.TokenEndpoint
 	data := "grant_type=client_credentials&scope=auto"
@@ -131,7 +120,6 @@ func (s *WildApricotService) refreshApiToken() error {
 	return nil
 }
 
-// makeHTTPRequest handles creating and sending HTTP requests, including token refresh.
 func (s *WildApricotService) makeHTTPRequest(method, url string, body io.Reader) (*http.Response, error) {
 	if err := s.refreshTokenIfNeeded(); err != nil {
 		s.logError("Error refreshing token: %v", err)
@@ -214,7 +202,6 @@ func (s *WildApricotService) GetContact(contactId int) (*models.Contact, error) 
 	return nil, fmt.Errorf("no contact found")
 }
 
-// parseHTTPResponse parses the HTTP response to extract either a single contact or multiple contacts.
 func (s *WildApricotService) parseHTTPResponse(resp *http.Response) ([]models.Contact, error) {
 	body, err := readResponseBody(resp)
 	if err != nil {
@@ -232,7 +219,7 @@ func (s *WildApricotService) parseHTTPResponse(resp *http.Response) ([]models.Co
 			return contactsResponse.Contacts, nil
 		}
 	}
-	// First failure, try parsing as a single contact
+	// try parsing as a single contact
 	var contact models.Contact
 	if err = json.Unmarshal(body, &contact); err == nil {
 		s.log.Info("Parsed single contact from response")

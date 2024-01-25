@@ -72,10 +72,8 @@ const hackPghBanner = `
 func main() {
 	log.Print(hackPghBanner)
 
-	// Set up logger
 	logger := setup.SetupLogger()
 
-	// Set up database
 	cfg := config.LoadConfig()
 	db, err := setup.SetupDatabase(cfg, logger)
 	if err != nil {
@@ -83,7 +81,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize Gin router
 	router := gin.Default()
 
 	setup.SetupRoutes(router, cfg, db, logger)
@@ -93,7 +90,6 @@ func main() {
 
 	setup.StartBackgroundDatabaseUpdate(waService, dbService, logger)
 
-	// Start the HTTPS server
 	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
 		logger.Fatalf("Failed to start HTTPS server: %v", err)
