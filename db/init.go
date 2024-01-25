@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"embed"
 	"io/fs"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed schema/tagsdb.sql

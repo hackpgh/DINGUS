@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func setupDatabase(cfg *config.Config, logger *logrus.Logger) (*sql.DB, error) {
+func SetupDatabase(cfg *config.Config, logger *logrus.Logger) (*sql.DB, error) {
 	database, err := db.InitDB(cfg.DatabasePath)
 	if err != nil {
 		logger.Errorf("Failed to initialize database: %v", err)

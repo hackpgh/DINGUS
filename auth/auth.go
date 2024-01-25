@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"rfid-backend/config"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -16,42 +17,48 @@ var (
 	// OAuthConf should be initialized in your main package and passed to auth package.
 	OAuthConf *oauth2.Config
 	Logger    *logrus.Logger
+	store     sessions.Store
 )
 
-// Initialize sets up the necessary configurations for the auth package.
-func Initialize(oauthConfig *oauth2.Config, sessionKey []byte, logger *logrus.Logger) {
-	OAuthConf = oauthConfig
+func Initialize(oauthConfig *oauth2.Config, cfg *config.Config, logger *logrus.Logger) {
 	Logger = logger
-	store := cookie.NewStore(sessionKey)
-	gin.Use(sessions.Sessions("mysession", store))
+	Logger.Info("Initializing authentication module")
+
+	OAuthConf = oauthConfig
+	OAuthConf.ClientSecret = cfg.SSOClientSecret
+	store = cookie.NewStore([]byte(cfg.CookieStoreSecret))
+
+	Logger.Info("Authentication module initialized successfully")
 }
 
-// StartOAuthFlow initiates the OAuth2 authentication process.
 func StartOAuthFlow(c *gin.Context) {
+	Logger.Info("Starting OAuth flow")
 	state := generateStateOauthToken()
+	Logger.Infof("Generated OAuth state: %s", state)
+
 	session := sessions.Default(c)
 	session.Set("state", state)
 	session.Save()
 
 	url := OAuthConf.AuthCodeURL(state)
+	Logger.Infof("Redirecting to: %s", url)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-// OAuthCallback handles the OAuth2 callback from the OAuth provider.
 func OAuthCallback(c *gin.Context) {
+	Logger.Info("Received OAuth callback")
 	session := sessions.Default(c)
 
-	// Validate state parameter
 	receivedState := c.Query("state")
 	expectedState := session.Get("state")
 	if receivedState != expectedState {
-		Logger.Error("Invalid OAuth state")
+		Logger.Errorf("Invalid OAuth state: expected %s, got %s", expectedState, receivedState)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	// Exchange code for access token
 	code := c.Query("code")
+	Logger.Infof("Exchanging code for token: %s", code)
 	if code == "" {
 		Logger.Error("No code in OAuth callback")
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -65,16 +72,14 @@ func OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	// Handle user authentication and session management
+	Logger.Infof("Token exchange successful: %v", token)
 	handleUserSession(c, token)
-
 	c.Redirect(http.StatusFound, "/web-ui/home")
 }
 
-// handleUserSession handles the creation or update of the user session after successful OAuth authentication.
 func handleUserSession(c *gin.Context, token *oauth2.Token) {
-	// Extract user information from token and create/update session
-	// This is an example. Replace with actual logic to handle user session.
+	Logger.Info("Handling user session")
+
 	userID := "extracted-user-id" // Replace with actual user ID extraction logic
 	session := sessions.Default(c)
 	session.Set("user_id", userID)
@@ -83,7 +88,10 @@ func handleUserSession(c *gin.Context, token *oauth2.Token) {
 	if err != nil {
 		Logger.WithError(err).Error("Failed to save session")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
+
+	Logger.Infof("User session saved for user ID: %s", userID)
 }
 
 // generateStateOauthToken generates a random state token for OAuth2 flow.
@@ -94,16 +102,22 @@ func generateStateOauthToken() string {
 		Logger.Errorf("Error generating state token: %v", err)
 		return ""
 	}
-	return base64.URLEncoding.EncodeToString(b)
+	token := base64.URLEncoding.EncodeToString(b)
+	Logger.Infof("Generated state token: %s", token)
+	return token
 }
 
 func RequireAuth(c *gin.Context) {
+	Logger.Info("Checking user authentication")
+
 	session := sessions.Default(c)
-	if user := session.Get("user_id"); user == nil {
-		// Redirect to login if not authenticated
+	user := session.Get("user_id")
+	if user == nil {
+		Logger.Info("User not authenticated, redirecting to login")
 		c.Redirect(http.StatusFound, "/auth/login")
 		c.Abort()
 	} else {
+		Logger.Info("User is authenticated")
 		c.Next()
 	}
 }

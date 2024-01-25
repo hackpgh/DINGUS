@@ -17,26 +17,26 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var oauthConf = &oauth2.Config{
-	ClientID:     "your-client-id",
-	ClientSecret: "your-client-secret",
-	RedirectURL:  "https://yourapp.com/auth/callback",
-	Scopes:       []string{"scope1", "scope2"},
-	Endpoint: oauth2.Endpoint{
-		AuthURL:  "provider-auth-url",
-		TokenURL: "provider-token-url",
-	},
-}
-
-func setupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *logrus.Logger) {
+func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *logrus.Logger) {
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("mysession", store))
 
 	waService := services.NewWildApricotService(cfg, logger)
 	dbService := services.NewDBService(db, cfg, logger)
 
-	// Set up OAuth routes
-	auth.Initialize(oauthConf, logger)
+	// In setupRoutes function
+	oauthConf := &oauth2.Config{
+		ClientID:     cfg.SSOClientID,
+		ClientSecret: cfg.SSOClientSecret,
+		RedirectURL:  cfg.SSORedirectURI,
+		Scopes:       []string{"contacts_me"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://davidbouw36728.wildapricot.org/sys/login/OAuthLogin",
+			TokenURL: "https://oauth.wildapricot.org/auth/token",
+		},
+	}
+	auth.Initialize(oauthConf, cfg, logger)
+
 	authGroup := router.Group("/auth")
 	{
 		authGroup.GET("/login", auth.StartOAuthFlow)

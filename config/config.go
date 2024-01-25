@@ -28,6 +28,7 @@ type Config struct {
 	SSOClientID             string `mapstructure:"sso_client_id" json:"sso_client_id"`
 	SSOClientSecret         string `mapstructure:"sso_client_secret" json:"sso_client_secret"`
 	SSORedirectURI          string `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
+	CookieStoreSecret       string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
 	WildApricotApiKey       string
 	WildApricotWebhookToken string
 	log                     *logrus.Logger
@@ -97,6 +98,11 @@ func loadConfig() interface{} {
 	cfg.SSORedirectURI = os.Getenv("WILD_APRICOT_SSO_REDIRECT_URI")
 	if cfg.SSORedirectURI == "" {
 		log.Fatalf("WILD_APRICOT_SSO_REDIRECT_URI not set in environment variables")
+	}
+
+	cfg.CookieStoreSecret = os.Getenv("COOKIE_STORE_SECRET")
+	if cfg.CookieStoreSecret == "" {
+		log.Fatalf("COOKIE_STORE_SECRET not set in environment variables")
 	}
 
 	return &cfg
