@@ -8,6 +8,7 @@ import (
 
 	"rfid-backend/utils"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -17,13 +18,20 @@ var (
 )
 
 type Config struct {
-	CertFile             string `mapstructure:"cert_file" json:"cert_file"`
-	DatabasePath         string `mapstructure:"database_path" json:"database_path"`
-	KeyFile              string `mapstructure:"key_file" json:"key_file"`
-	RFIDFieldName        string `mapstructure:"rfid_field_name" json:"rfid_field_name"`
-	TrainingFieldName    string `mapstructure:"training_field_name" json:"training_field_name"`
-	WildApricotAccountId int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
-	ContactFilterQuery   string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
+	CertFile                string `mapstructure:"cert_file" json:"cert_file"`
+	DatabasePath            string `mapstructure:"database_path" json:"database_path"`
+	KeyFile                 string `mapstructure:"key_file" json:"key_file"`
+	TagIdFieldName          string `mapstructure:"tag_id_field_name" json:"tag_id_field_name"`
+	TrainingFieldName       string `mapstructure:"training_field_name" json:"training_field_name"`
+	WildApricotAccountId    int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
+	ContactFilterQuery      string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
+	SSOClientID             string `mapstructure:"sso_client_id" json:"sso_client_id"`
+	SSOClientSecret         string `mapstructure:"sso_client_secret" json:"sso_client_secret"`
+	SSORedirectURI          string `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
+	CookieStoreSecret       string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
+	WildApricotApiKey       string
+	WildApricotWebhookToken string
+	log                     *logrus.Logger
 }
 
 func init() {
@@ -66,11 +74,42 @@ func loadConfig() interface{} {
 		log.Fatalf("Key file not found: %s", cfg.KeyFile)
 	}
 
+	// Load environment variables
+	cfg.WildApricotApiKey = os.Getenv("WILD_APRICOT_API_KEY")
+	if cfg.WildApricotApiKey == "" {
+		log.Fatalf("WILD_APRICOT_API_KEY not set in environment variables")
+	}
+
+	cfg.WildApricotWebhookToken = os.Getenv("WILD_APRICOT_WEBHOOK_TOKEN")
+	if cfg.WildApricotWebhookToken == "" {
+		log.Fatalf("WILD_APRICOT_WEBHOOK_TOKEN not set in environment variables")
+	}
+
+	cfg.SSOClientID = os.Getenv("WILD_APRICOT_SSO_CLIENT_ID")
+	if cfg.SSOClientID == "" {
+		log.Fatalf("WILD_APRICOT_SSO_CLIENT_ID not set in environment variables")
+	}
+
+	cfg.SSOClientSecret = os.Getenv("WILD_APRICOT_SSO_CLIENT_SECRET")
+	if cfg.SSOClientSecret == "" {
+		log.Fatalf("WILD_APRICOT_SSO_CLIENT_SECRET not set in environment variables")
+	}
+
+	cfg.SSORedirectURI = os.Getenv("WILD_APRICOT_SSO_REDIRECT_URI")
+	if cfg.SSORedirectURI == "" {
+		log.Fatalf("WILD_APRICOT_SSO_REDIRECT_URI not set in environment variables")
+	}
+
+	cfg.CookieStoreSecret = os.Getenv("COOKIE_STORE_SECRET")
+	if cfg.CookieStoreSecret == "" {
+		log.Fatalf("COOKIE_STORE_SECRET not set in environment variables")
+	}
+
 	return &cfg
 }
 
 // UpdateConfigFile updates the configuration settings based on the provided newConfig.
-func UpdateConfigFile(newConfig Config) {
+func UpdateConfigFile(newConfig Config) error {
 	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
 		log.Fatalf("Error fetching project root absolute path: %s", err)
@@ -104,8 +143,8 @@ func UpdateConfigFile(newConfig Config) {
 		viper.Set("contact_filter_query", newConfig.ContactFilterQuery)
 
 	}
-	if newConfig.RFIDFieldName != "" {
-		viper.Set("rfid_field_name", newConfig.RFIDFieldName)
+	if newConfig.TagIdFieldName != "" {
+		viper.Set("tag_id_field_name", newConfig.TagIdFieldName)
 	}
 	if newConfig.TrainingFieldName != "" {
 		viper.Set("training_field_name", newConfig.TrainingFieldName)
@@ -115,7 +154,8 @@ func UpdateConfigFile(newConfig Config) {
 	err = viper.WriteConfig()
 	if err != nil {
 		log.Fatalf("Error writing to config file: %s", err)
-	} else {
-		log.Println("Configuration file updated successfully.")
+		return err
 	}
+	log.Println("Configuration file updated successfully.")
+	return nil
 }

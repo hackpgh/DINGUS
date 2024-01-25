@@ -1,0 +1,83 @@
+info:
+  contact: {}
+paths:
+  /api/registerDevice:
+    post:
+      consumes:
+      - application/json
+      description: Register a new device with its IP and name.
+      operationId: register-device
+      parameters:
+      - description: Device Name
+        in: query
+        name: deviceName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Device registered successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register device
+  /api/updateConfig:
+    post:
+      consumes:
+      - application/json
+      description: Updates the server's config yaml file
+      operationId: update-config
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Config updated successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update config
+  /api/webhooks:
+    post:
+      consumes:
+      - application/json
+      description: Wild Apricot sends arbitrary JSON per event trigger bsed on their
+        criteria detailed in the official docs
+      operationId: handle-webhook
+      parameters:
+      - description: Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Webhook processed successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Handle Wild Apricot webhook requests
+swagger: "2.0"

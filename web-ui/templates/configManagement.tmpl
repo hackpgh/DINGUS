@@ -1,0 +1,35 @@
+{{ template "header.tmpl" . }}
+
+{{ define "title" }}Configuration Management - DINGUS{{ end }}
+
+<div class="container">
+    <h1>Update Configuration</h1>
+    <form id="configForm">
+        <label for="certFile">Certificate File Path:</label>
+        <input type="text" id="certFile" placeholder="e.g., /path/to/cert.pem"><br>
+        
+        <label for="keyFile">Key File Path:</label>
+        <input type="text" id="keyFile" placeholder="e.g., /path/to/key.pem"><br>
+
+        <label for="databasePath">Database Path:</label>
+        <input type="text" id="databasePath" placeholder="e.g., /path/to/database.sqlite"><br>
+        
+        <label for="wildApricotAccountId">Wild Apricot Account ID:</label>
+        <input type="text" id="wildApricotAccountId" placeholder="e.g., 123456"><br>
+
+        <label for="contactFilterQuery">Wild Apricot Contact Filter Query:</label>
+        <input type="text" id="contactFilterQuery" placeholder="e.g., status eq Active or status eq 'Pending - Renewal'"><br>
+        
+        <label for="tagIdFieldName">Tag Id Field Name:</label>
+        <input type="text" id="tagIdFieldName" placeholder="e.g., Door Key"><br>
+        
+        <label for="trainingFieldName">Training Field Name:</label>
+        <input type="text" id="trainingFieldName" placeholder="e.g., Safety Training"><br>
+        
+        <button type="submit">Update Config</button>
+    </form>
+</div>
+    
+    <script src="/js/configManagement.js"></script>
+
+{{ template "footer.tmpl" . }}

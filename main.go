@@ -1,5 +1,5 @@
 /*
-RFID Backend Server
+DINGUS
 ===================
 This Go server provides backend services for an RFID-based access control system
 for HackPGH's magnetic locks and machines that require Safety Training sign-offs.
@@ -37,16 +37,14 @@ package main
 
 import (
 	"log"
-	"net/http"
-
-	//_ "net/http/pprof"
-	"rfid-backend/config"
-	"rfid-backend/db"
-	"rfid-backend/handlers"
-	"rfid-backend/services"
 	"time"
 
-	"github.com/joho/godotenv"
+	"rfid-backend/config"
+	"rfid-backend/services"
+	"rfid-backend/setup"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 const hackPghBanner = `
@@ -63,7 +61,7 @@ const hackPghBanner = `
 |                                                                  |
 |                   Be Excellent to Each Other                     |
 +------------------------------------------------------------------+
-| RFID Backend Server for HackPGH                                  |
+| DINGUS for HackPGH                                  |
 | - Configure via 'config.yml' or '/' endpoint                     |
 | - Serves '/api/doorCache' & '/api/machineCache?machineName= '    |
 | - Ensure SSL certificates are in place for HTTPS.                |
@@ -72,80 +70,45 @@ const hackPghBanner = `
 `
 
 func main() {
-	// // pprof monitoring, import '_ /net/http/pprof'
-	// go func() {
-	// 	_ = http.ListenAndServe("0.0.0.0:8081", nil)
-	// }()
-
 	log.Print(hackPghBanner)
-	// Load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+
+	logger := setup.SetupLogger()
 
 	cfg := config.LoadConfig()
-	log.Printf("Certificate File: %s", cfg.CertFile)
-	log.Printf("Key File: %s", cfg.KeyFile)
-	log.Printf("Database Path: %s", cfg.DatabasePath)
-	db, err := db.InitDB(cfg.DatabasePath)
+	db, err := setup.SetupDatabase(cfg, logger)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		logger.Fatalf("Failed to setup database: %v", err)
 	}
 	defer db.Close()
 
-	wildApricotSvc := services.NewWildApricotService(cfg)
-	dbService := services.NewDBService(db, cfg)
+	router := gin.Default()
 
-	cacheHandler := handlers.NewCacheHandler(dbService, cfg)
+	setup.SetupRoutes(router, cfg, db, logger)
 
-	configHandler := handlers.NewConfigHandler()
+	waService := services.NewWildApricotService(cfg, logger)
+	dbService := services.NewDBService(db, cfg, logger)
 
-	// Configuration web-ui endpoint
-	// TODO: Add auth level restriction that allows access to members only if they have sufficient membership level
-	http.Handle("/", http.FileServer(http.Dir("web-ui")))
+	setup.StartBackgroundDatabaseUpdate(waService, dbService, logger)
 
-	// Configuration management endpoints
-	http.HandleFunc("/api/getConfig", configHandler.GetConfig)
-	http.HandleFunc("/api/updateConfig", configHandler.UpdateConfig)
-
-	// Access Control system tags data endpoints for rfid readers' cache
-	http.HandleFunc("/api/machineCache", cacheHandler.HandleMachineCacheRequest())
-	http.HandleFunc("/api/doorCache", cacheHandler.HandleDoorCacheRequest())
-
-	// Start background task to fetch contacts and update the database
-	go func() {
-		ticker := time.NewTicker(2 * time.Second)
-		for range ticker.C {
-			updateDatabaseFromWildApricot(wildApricotSvc, dbService)
-		}
-	}()
-
-	log.Println("Starting HTTPS server on :443...")
-	err = http.ListenAndServeTLS(":443", cfg.CertFile, cfg.KeyFile, nil)
+	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
-		log.Fatalf("Failed to start HTTPS server: %v", err)
+		logger.Fatalf("Failed to start HTTPS server: %v", err)
 	}
 }
 
-func updateDatabaseFromWildApricot(waService *services.WildApricotService, dbService *services.DBService) {
-	log.Println("Fetching contacts from Wild Apricot and updating database...")
-	contacts, err := waService.GetContacts()
-	if err != nil {
-		log.Printf("Failed to fetch contacts: %v", err)
-		return
-	}
+func GinLogrus(logger *logrus.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		duration := time.Since(start)
 
-	if len(contacts) <= 0 {
-		log.Println("No contacts to process from Wild Apricot. Sleeping...")
-		return
+		logger.WithFields(logrus.Fields{
+			"status_code": c.Writer.Status(),
+			"method":      c.Request.Method,
+			"path":        c.Request.URL.Path,
+			"ip":          c.ClientIP(),
+			"user_agent":  c.Request.UserAgent(),
+			"latency":     duration,
+		}).Info("handled request")
 	}
-
-	if err = dbService.ProcessContactsData(contacts); err != nil {
-		log.Printf("Failed to update database: %v", err)
-		return
-	} else {
-		log.Println("Latest Wild Apricot contacts successfully processed.")
-	}
-
 }
