@@ -1,0 +1,14 @@
+# .github/labeler.yml (label rules)
+
+backend:
+  - '*.go'
+  - 'go.mod'
+  - 'go.sum'
+
+documentation:
+  - '*.md'
+  - 'docs/*'
+
+frontend:
+  - 'web-ui/**/*'
+  - 'static/**/*'

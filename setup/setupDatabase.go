@@ -1,3 +1,4 @@
+// File: setup/setupDatabase.go
 package setup
 
 import (
