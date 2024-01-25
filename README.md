@@ -16,80 +16,115 @@ ZZZzz /,`.-'`'    -.  ;-;;,_
      |,4-  ) )-,_. ,\ (  `'-'
     '---''(_/--'  `-'\_)  
 ```
-#### TL:DR
+### TL:DR
 This project is an RFID access control system's backend server written in Golang for the HackPGH makerspace. It uses Wild Apricot API as its source of truth for member data. 
 
 ## Features
 
--   **Wild Apricot Support:** Fetches [Contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
--   **SQLite Database:** Maintains a synchronised database of tag ids and safety training sign-offs.
--   **Automated Synchronization:** Configurable interval for updating the database with the latest WA API data. Supports WA Webhooks.
--   **Secure HTTP Endpoints:** Provides machine and door access data via HTTPS endpoints.
--   **Configuration Web UI:** Change server settings via web interface hosted at `https:/localhost/` (may require reboot).
+-   **Wild Apricot Integration**: Synchronizes member [contact data](https://app.swaggerhub.com/apis-docs/WildApricot/wild-apricot_api_for_non_administrative_access/7.15.0#/Contacts/get_accounts__accountId__contacts) from the [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api).
+-   **Distributed RFID Access Control**: Synchronizes authorization data caches for Wiegand26 RFID tag readers.
+-   **SSO OAuth2 Authentication**: Implements Wild Apricot [SSO OAuth2](https://gethelp.wildapricot.com/en/articles/200-single-sign-on-service-sso#overview) for secure access to web-based interfaces.
+-   **SQLite Database**: Maintains persistent data, including Wild Apricot Contact IDs, RFID tags and safety training records.
+-   **Automated Data Sync**: Regular updates from the Wild Apricot API as well as real-time Contact and Membership webhook support.
+-   **Secure Web UI**: Web interface for configuration and device management, secured via HTTPS.
+
+## Web UI Screens
+
+1.  **Configuration Screen**: Modify server settings, effective upon reboot.
+2.  **Device Management**: Monitor and manage RFID devices.
+3.  **User Authentication**: Secured with Wild Apricot SSO OAuth2, restricting access to authorized users.
 
 ## Project Structure
 
--   `/config`: Configuration file loading logic.
--   `/db`: Database initialization and schema management.
--   `/db/schema`: Database schema files.
--   `/db/data`: Default `tagsdb.sqlite` destination
--   `/handlers`: HTTP handlers for server endpoints.
--   `/models`: Data structures for database entities and API responses.
--   `/services`: Business logic including API and database operations.
--   `/utils`: Utility functions and singleton management.
--   `/web-ui`: Web assets for config update UI
+-   `auth`: Authentication logic, including OAuth2 SSO.
+-   `config`: Configuration file parsing and loading.
+-   `db`: Database initialization and schema management.
+-   `handlers`: HTTP server endpoint handlers.
+-   `models`: Database and API response structures.
+-   `services`: Business logic for API and database interactions.
+-   `setup`: Server and component initialization.
+-   `utils`: General utility functions.
+-   `webhooks`: Wild Apricot webhook handling.
+-   `web-ui`: Frontend assets.
 
 ## Getting Started
 
 ### Prerequisites
 
--   Go (latest stable version)
--   Access to Wild Apricot API with a valid API key
--   SSL certificate and key for HTTPS
--   GCC (GNU Compiler Collection) - Required for building SQLite Go package which uses cgo.
+-   [Go](https://go.dev/doc/install) (latest stable version)
+-   Access to [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api)
+-   SSL certificate and key
+-   GCC for SQLite Go package compilation (requires cgo)
 
-### Setting up GCC
+### Setting CGO_ENABLED
 
-Before you can build and run this project, make sure you have GCC installed on your system. You can typically install GCC on Linux-based systems using package managers like `apt-get` (for Debian/Ubuntu) or `yum` (for CentOS/RHEL). For macOS, you can use Homebrew. MinGW-w64 is recommended for Windows.
+To successfully build and run this project, `CGO_ENABLED` must be set to `1`. This allows for the compilation of C code, a requirement for the SQLite package used in the project.
 
-### Setting the `CGO_ENABLED` Environment Variable
+-   **Bash**: `export CGO_ENABLED=1`
+-   **PowerShell**: `set CGO_ENABLED=1`
 
-To build and run this project successfully, you need to set the `CGO_ENABLED` environment variable to `1`.
+## Generating SSL Certificates for HTTPS
 
-You can set `CGO_ENABLED` temporarily in your terminal by running the following command:
-#### Bash command
+### Prerequisites
 
-`export CGO_ENABLED=1` 
+-   OpenSSL installed on your system. For Windows, you can download it from [here](https://indy.fulgan.com/SSL/). Most Linux distributions and MacOS have it pre-installed.
 
-#### PowerShell command
+### Instructions
 
-`set CGO_ENABLED=1`
+#### For Bash (Linux/MacOS)
 
-### Configuration
+1.  Open a terminal.
+2.  Run the following command to generate a private key and a certificate:
 
-Modify the `config.yml` file in the `/config` directory to set the following parameters:
+    `openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` 
+    
+3.  You will be prompted to enter details for the certificate and a passphrase for the private key.
+4.  Remove the passphrase from the private key (optional):
+    
+    `openssl rsa -in key.pem -out key.unencrypted.pem`
+    
+    `mv key.unencrypted.pem key.pem` 
+    
 
--   Database path - Default: `./db/data`
--   Wild Apricot account ID
--   SSL certificate and key file paths
+#### For Windows
+
+1.  [Download](https://indy.fulgan.com/SSL/) and install OpenSSL from the provided link.
+2.  Open OpenSSL via the command prompt (you might need to navigate to the OpenSSL `bin` directory).
+3.  Run the following command:
+
+    `openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365` 
+    
+4.  Enter the required information when prompted, and set a passphrase for the private key.
+5.  Remove the passphrase from the private key (optional):
+
+    `openssl rsa -in key.pem -out key.unencrypted.pem`
+    
+    `move key.unencrypted.pem key.pem` 
+    
+
+After generating the `key.pem` and `cert.pem` files, place them in the appropriate directory as specified in your `config.yaml` file for the server to use them for HTTPS.
+
+### Configuring the Server
+
+Update the `config.yaml` file to point to the location of your newly generated `cert.pem` and `key.pem` files under the SSL certificate and key file paths, respectively.
 
 ### Running the Server
 
-To start the server, run:
+You can start the server with `go run main.go`
 
-`go run main.go` 
+### Accessing Swagger Documentation
 
-The server will start listening for requests on port 443 and periodically update the database with data from the Wild Apricot API.
+Swagger documentation can be accessed by navigating to `https://localhost/swagger/index.html` once the server is running. This provides an interactive UI to explore and test the available API endpoints.
 
-### Running the Unit Tests
+### Running Unit Tests
 
-`go test`
+Run `go test` to execute the unit tests.
 
 ## Endpoints
 
 -   `/`: Update Configuration web UI. Server reboot required for changes to take effect.
 -   `/webhooks`: Wild Apricot webhooks endpoint.
--   `/registerDevice`: Process registration requests from ESP controllers on the network.
+-   `/registerDevice`: DEPRECATED - Process registration requests from ESP controllers on the network.
 
 ## Contributing
 

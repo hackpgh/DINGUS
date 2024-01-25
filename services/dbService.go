@@ -31,7 +31,6 @@ func (s *DBService) GetAllTagIds() ([]uint32, error) {
 	return s.fetchTagIds(GetAllTagIdsQuery)
 }
 
-// Helper function to fetch and format TagId data from a provided query.
 func (s *DBService) fetchTagIds(query string, args ...interface{}) ([]uint32, error) {
 	var tagIds []uint32
 
@@ -107,7 +106,6 @@ func (s *DBService) GetDevices() ([]string, error) {
 	return devices, nil
 }
 
-// service starts with this func
 func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 	var allContacts []int
 	var allTagIds []uint32
@@ -134,7 +132,7 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 
 	// Guard against empty WA contacts responses which is the
 	// typical first response from WA API when WA async
-	// resultId is refreshing
+	// resultId is refreshing - DEPRECATED?
 	if len(allTagIds) <= 0 {
 		return errors.New("allTagIds list, parsed from Wild Apricot, was empty")
 	}
@@ -145,7 +143,6 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 		s.log.Info("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
-	// Perform database operations with extracted data
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -299,7 +296,6 @@ func (s *DBService) manageMemberTrainingLinks(tx *sql.Tx, trainingMap map[string
 }
 
 func (s *DBService) deleteInactiveMembers(tx *sql.Tx, allContacts []int) error {
-	// Convert allContacts to a string slice for query
 	var params []string
 	for _, contactId := range allContacts {
 		params = append(params, strconv.Itoa(contactId))
