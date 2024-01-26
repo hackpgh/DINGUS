@@ -120,10 +120,12 @@ func (s *WildApricotService) refreshApiToken() error {
 	return nil
 }
 
-func (s *WildApricotService) makeHTTPRequest(method, url string, body io.Reader) (*http.Response, error) {
-	if err := s.refreshTokenIfNeeded(); err != nil {
-		s.logError("Error refreshing token: %v", err)
-		return nil, err
+func (s *WildApricotService) makeHTTPRequest(method, url string, body io.Reader, ssoToken string) (*http.Response, error) {
+	if len(ssoToken) <= 0 {
+		if err := s.refreshTokenIfNeeded(); err != nil {
+			s.logError("Error refreshing token: %v", err)
+			return nil, err
+		}
 	}
 
 	req, err := http.NewRequest(method, url, body)
@@ -131,7 +133,11 @@ func (s *WildApricotService) makeHTTPRequest(method, url string, body io.Reader)
 		s.logError("Error creating HTTP request: %v", err)
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bearer "+s.ApiToken)
+	if len(ssoToken) <= 0 {
+		req.Header.Add("Authorization", "Bearer "+s.ApiToken)
+	} else {
+		req.Header.Add("Authorization", "Bearer "+ssoToken)
+	}
 	req.Header.Add("Accept", "application/json")
 
 	resp, err := s.Client.Do(req)
@@ -152,7 +158,7 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 		s.cfg.WildApricotAccountId,
 		url.QueryEscape(s.cfg.ContactFilterQuery))
 
-	resp, err := s.makeHTTPRequest("GET", contactURL, nil)
+	resp, err := s.makeHTTPRequest("GET", contactURL, nil, "")
 	if err != nil {
 		s.logError("creating request for contacts", err)
 		return nil, err
@@ -172,12 +178,41 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	return contacts, nil
 }
 
+func (s *WildApricotService) GetAuthContact(token string) (*models.Contact, error) {
+	contactURL := s.buildURL("/%d/Contacts/me",
+		s.cfg.WildApricotAccountId)
+
+	resp, err := s.makeHTTPRequest("GET", contactURL, nil, token)
+	if err != nil {
+		s.logError("creating request for contact", err)
+		return nil, err
+	}
+
+	if err := handleHTTPError(resp); err != nil {
+		s.logError("handling HTTP error for contact", err)
+		return nil, err
+	}
+
+	contact, err := s.parseHTTPResponse(resp)
+	if err != nil {
+		s.logError("parsing HTTP response", err)
+		return nil, err
+	}
+
+	s.log.Info("Parsed contact from response")
+	if len(contact) > 0 {
+		return &contact[0], nil
+	}
+
+	return nil, fmt.Errorf("no contact found")
+}
+
 func (s *WildApricotService) GetContact(contactId int) (*models.Contact, error) {
 	contactURL := s.buildURL("/%d/Contacts/%d",
 		s.cfg.WildApricotAccountId,
 		contactId)
 
-	resp, err := s.makeHTTPRequest("GET", contactURL, nil)
+	resp, err := s.makeHTTPRequest("GET", contactURL, nil, "")
 	if err != nil {
 		s.logError("creating request for contact", err)
 		return nil, err

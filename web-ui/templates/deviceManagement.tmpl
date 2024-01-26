@@ -5,13 +5,13 @@
 <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
     <!-- Toast content -->
 </div>
-    
-<div class="container mt-5">
-    <h2 class="mb-4">Device Management</h2>
+
+<div class="container mt-5 bg-dark text-white p-4 rounded">
+    <h2 class="mb-4 text-center">Device Management</h2>
     <form id="deviceManagementForm" action="/api/updateDeviceAssignments" method="POST">
         <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="thead-light">
+            <table class="table table-dark table-striped table-bordered">
+                <thead>
                     <tr>
                         <th>Device IP</th>
                         <th>Training Label</th>
@@ -22,10 +22,10 @@
                     <tr>
                         <td>{{.}}</td>
                         <td>
-                            <select name="{{.}}" class="form-control">
-                                <option value="">Select Training</option>
+                            <select name="{{.}}" class="form-control bg-secondary text-white">
+                                <option value="" class="bg-dark text-white">Select Training</option>
                                 {{range $.Trainings}}
-                                <option value="{{.}}">{{.}}</option>
+                                <option value="{{.}}" class="bg-dark text-white">{{.}}</option>
                                 {{end}}
                             </select>
                         </td>
@@ -34,7 +34,9 @@
                 </tbody>
             </table>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+        </div>
     </form>
 </div>
 

@@ -112,7 +112,7 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 	trainingMap := make(map[string][]uint32)
 
 	for _, contact := range contacts {
-		contactId, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
+		contactId, _, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
 		if err != nil {
 			return err
 		}
@@ -340,7 +340,7 @@ func (s *DBService) insertMemberTrainingLink(tx *sql.Tx, tagId uint32, trainings
 }
 
 func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactParameters, contact models.Contact) error {
-	contactId, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
+	contactId, _, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
 	if err != nil {
 		return err
 	}
@@ -378,7 +378,7 @@ func (s *DBService) ProcessContactWebhookTrainingData(params webhooks.ContactPar
 }
 
 func (s *DBService) ProcessMembershipWebhook(params webhooks.MembershipParameters, contact models.Contact) error {
-	contactId, tagId, _, err := contact.ExtractContactData(s.cfg)
+	contactId, _, tagId, _, err := contact.ExtractContactData(s.cfg)
 	if err != nil {
 		return err
 	}

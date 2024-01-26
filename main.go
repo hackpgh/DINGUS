@@ -37,14 +37,12 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"rfid-backend/config"
 	"rfid-backend/services"
 	"rfid-backend/setup"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 const hackPghBanner = `
@@ -71,10 +69,9 @@ const hackPghBanner = `
 
 func main() {
 	log.Print(hackPghBanner)
-
-	logger := setup.SetupLogger()
-
 	cfg := config.LoadConfig()
+	logger := setup.SetupLogger(cfg)
+
 	db, err := setup.SetupDatabase(cfg, logger)
 	if err != nil {
 		logger.Fatalf("Failed to setup database: %v", err)
@@ -93,22 +90,5 @@ func main() {
 	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
 		logger.Fatalf("Failed to start HTTPS server: %v", err)
-	}
-}
-
-func GinLogrus(logger *logrus.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		duration := time.Since(start)
-
-		logger.WithFields(logrus.Fields{
-			"status_code": c.Writer.Status(),
-			"method":      c.Request.Method,
-			"path":        c.Request.URL.Path,
-			"ip":          c.ClientIP(),
-			"user_agent":  c.Request.UserAgent(),
-			"latency":     duration,
-		}).Info("handled request")
 	}
 }

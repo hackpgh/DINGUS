@@ -1,24 +1,39 @@
 h1 {
-    color: #333;
+    color: #e0e0e0;
     text-align: center;
     margin-top: 20px;
+}
+
+h2 {
+    color: #a0a0a0;
+    margin-bottom: 10px;
 }
 
 form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
     margin-top: 20px;
+}
+
+.section {
+    background-color: #1a1a1a;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 input[type=text], select {
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
+    background-color: #262626;
     border-radius: 4px;
     font-size: 16px;
+    color: white;
+    margin-top: 5px;
 }
 
-button {
+button.btn-primary {
     padding: 10px 20px;
     background-color: #0056b3;
     color: white;
@@ -26,18 +41,15 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
+    margin-top: 20px;
+}
+
+button.btn-primary:hover {
+    background-color: #004494;
 }
 
 label {
     font-weight: bold;
-}
-
-.btn-primary {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-
-.btn-primary:hover {
-    background-color: #004494;
-    border-color: #003974;
+    color: #ccc;
+    margin-top: 15px;
 }

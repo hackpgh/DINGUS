@@ -16,7 +16,8 @@ document.getElementById('configForm').addEventListener('submit', function(e) {
         wild_apricot_account_id: accountId,
         contact_filter_query: document.getElementById('contactFilterQuery').value,
         tag_id_field_name: document.getElementById('tagIdFieldName').value,
-        training_field_name: document.getElementById('trainingFieldName').value
+        training_field_name: document.getElementById('trainingFieldName').value,
+        loki_hook_url: document.getElementById('lokiHookUrl').value,
     };
 
     fetch('/api/updateConfig', {

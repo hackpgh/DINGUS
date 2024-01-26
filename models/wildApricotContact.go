@@ -36,14 +36,41 @@ type SafetyTraining struct {
 	Label string `json:"Label"`
 }
 
-// Returns contact_id, tagId, trainings
+func (c *Contact) ExtractContactData(cfg *config.Config) (int, bool, uint32, []string, error) {
+	isAdmin, err := c.ExtractAdminRole()
+	if err != nil {
+		return 0, false, 0, nil, fmt.Errorf("Error processing AdminRole for contact %d: %v", c.Id, err)
+	}
+
+	tagID, err := c.ExtractTagID(cfg)
+	if err != nil {
+		return 0, false, 0, nil, fmt.Errorf("error extracting TagId for contact %d: %v", c.Id, err)
+	}
+
+	trainingLabels, err := c.ExtractTrainingLabels(cfg)
+	if err != nil {
+		return 0, false, 0, nil, fmt.Errorf("error extracting training labels for contact %d: %v", c.Id, err)
+	}
+
+	return c.Id, isAdmin, tagID, trainingLabels, nil
+}
+
+func (c *Contact) ExtractAdminRole() (bool, error) {
+	for _, val := range c.FieldValues {
+		if val.SystemCode == "AdminRole" {
+			return parseAdminRole(val)
+		}
+	}
+	return false, nil
+}
+
 func (c *Contact) ExtractTagID(cfg *config.Config) (uint32, error) {
 	for _, val := range c.FieldValues {
 		if val.FieldName == cfg.TagIdFieldName {
 			return parseTagId(val)
 		}
 	}
-	return 0, nil // Return 0 if TagId field is not found
+	return 0, nil
 }
 
 // Extracts training labels from contact field values.
@@ -56,19 +83,38 @@ func (c *Contact) ExtractTrainingLabels(cfg *config.Config) ([]string, error) {
 	return nil, nil // Return nil if Training field is not found
 }
 
-// Combines extraction of Tag ID and Training Labels.
-func (c *Contact) ExtractContactData(cfg *config.Config) (int, uint32, []string, error) {
-	tagID, err := c.ExtractTagID(cfg)
-	if err != nil {
-		return 0, 0, nil, fmt.Errorf("error extracting TagId for contact %d: %v", c.Id, err)
+func parseAdminRole(fieldValue FieldValue) (bool, error) {
+	adminRoleValues, ok := fieldValue.Value.([]interface{})
+	if !ok {
+		return false, errors.New("admin role value is not a slice")
 	}
 
-	trainingLabels, err := c.ExtractTrainingLabels(cfg)
-	if err != nil {
-		return 0, 0, nil, fmt.Errorf("error extracting training labels for contact %d: %v", c.Id, err)
+	var labels []bool
+	for _, item := range adminRoleValues {
+		adminRoleMap, ok := item.(map[string]interface{})
+		if !ok {
+			return false, errors.New("admin role item is not a map")
+		}
+
+		isAdmin, err := checkLabelFromAdminRoleMap(adminRoleMap)
+		if err != nil {
+			return isAdmin, err
+		}
+		labels = append(labels, isAdmin)
 	}
 
-	return c.Id, tagID, trainingLabels, nil
+	return true, nil
+}
+
+func checkLabelFromAdminRoleMap(adminRoleMap map[string]interface{}) (bool, error) {
+	label, ok := adminRoleMap["Label"].(string)
+	if !ok {
+		return false, errors.New("label not found or not a string in admin role item")
+	}
+	if label != "Account administrator (Full access)" {
+		return false, nil
+	}
+	return true, nil
 }
 
 func parseTagId(fieldValue FieldValue) (uint32, error) {

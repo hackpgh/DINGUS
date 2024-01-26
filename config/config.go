@@ -18,28 +18,31 @@ var (
 )
 
 type Config struct {
-	CertFile                string `mapstructure:"cert_file" json:"cert_file"`
-	DatabasePath            string `mapstructure:"database_path" json:"database_path"`
-	KeyFile                 string `mapstructure:"key_file" json:"key_file"`
+	// TLS
+	CertFile     string `mapstructure:"cert_file" json:"cert_file"`
+	DatabasePath string `mapstructure:"database_path" json:"database_path"`
+	KeyFile      string `mapstructure:"key_file" json:"key_file"`
+	// Wild Apricot
 	TagIdFieldName          string `mapstructure:"tag_id_field_name" json:"tag_id_field_name"`
 	TrainingFieldName       string `mapstructure:"training_field_name" json:"training_field_name"`
 	WildApricotAccountId    int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
 	ContactFilterQuery      string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
-	SSOClientID             string `mapstructure:"sso_client_id" json:"sso_client_id"`
-	SSOClientSecret         string `mapstructure:"sso_client_secret" json:"sso_client_secret"`
-	SSORedirectURI          string `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
-	CookieStoreSecret       string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
 	WildApricotApiKey       string
 	WildApricotWebhookToken string
-	log                     *logrus.Logger
+	// SSO
+	SSOClientID       string `mapstructure:"sso_client_id" json:"sso_client_id"`
+	SSOClientSecret   string `mapstructure:"sso_client_secret" json:"sso_client_secret"`
+	SSORedirectURI    string `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
+	CookieStoreSecret string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
+	// Logging
+	log         *logrus.Logger
+	LokiHookURL string `mapstructure:"loki_hook_url" json:"loki_hook_url"`
 }
 
 func init() {
-	// Initialize the config singleton instance.
 	config = utils.NewSingleton(loadConfig())
 }
 
-// LoadConfig returns the configuration instance.
 func LoadConfig() *Config {
 	return config.Get(loadConfig).(*Config)
 }
@@ -95,6 +98,7 @@ func loadConfig() interface{} {
 		log.Fatalf("WILD_APRICOT_SSO_CLIENT_SECRET not set in environment variables")
 	}
 
+	// TODO: Move this to the config yaml file?
 	cfg.SSORedirectURI = os.Getenv("WILD_APRICOT_SSO_REDIRECT_URI")
 	if cfg.SSORedirectURI == "" {
 		log.Fatalf("WILD_APRICOT_SSO_REDIRECT_URI not set in environment variables")
@@ -108,7 +112,6 @@ func loadConfig() interface{} {
 	return &cfg
 }
 
-// UpdateConfigFile updates the configuration settings based on the provided newConfig.
 func UpdateConfigFile(newConfig Config) error {
 	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
@@ -124,7 +127,6 @@ func UpdateConfigFile(newConfig Config) error {
 		log.Fatalf("Error reading config file: %s", err)
 	}
 
-	// Update viper's settings only if the newConfig fields are not empty
 	if newConfig.CertFile != "" {
 		viper.Set("cert_file", newConfig.CertFile)
 	}
@@ -150,7 +152,6 @@ func UpdateConfigFile(newConfig Config) error {
 		viper.Set("training_field_name", newConfig.TrainingFieldName)
 	}
 
-	// Save the new settings back to the config file
 	err = viper.WriteConfig()
 	if err != nil {
 		log.Fatalf("Error writing to config file: %s", err)

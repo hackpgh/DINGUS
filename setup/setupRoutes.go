@@ -24,7 +24,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 	waService := services.NewWildApricotService(cfg, logger)
 	dbService := services.NewDBService(db, cfg, logger)
 
-	// In setupRoutes function
 	oauthConf := &oauth2.Config{
 		ClientID:     cfg.SSOClientID,
 		ClientSecret: cfg.SSOClientSecret,
@@ -35,12 +34,16 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 			TokenURL: "https://oauth.wildapricot.org/auth/token",
 		},
 	}
+	auth := auth.NewAuth(cfg, logger)
 	auth.Initialize(oauthConf, cfg, logger)
 
 	authGroup := router.Group("/auth")
 	{
 		authGroup.GET("/login", auth.StartOAuthFlow)
 		authGroup.GET("/callback", auth.OAuthCallback)
+		authGroup.GET("/magicWord", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "magicWord.tmpl", nil)
+		})
 	}
 
 	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
@@ -63,10 +66,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 	router.Static("/assets", "./web-ui/assets")
 	router.LoadHTMLGlob("web-ui/templates/*")
 
-	setupWebUIRoutes(router, logger)
+	setupWebUIRoutes(router, logger, auth)
 }
 
-func setupWebUIRoutes(router *gin.Engine, logger *logrus.Logger) {
+func setupWebUIRoutes(router *gin.Engine, logger *logrus.Logger, auth *auth.Auth) {
 	webUI := router.Group("/web-ui")
 	{
 		webUI.Use(auth.RequireAuth)
@@ -79,6 +82,11 @@ func setupWebUIRoutes(router *gin.Engine, logger *logrus.Logger) {
 		})
 		webUI.GET("/deviceManagement", func(c *gin.Context) {
 			c.HTML(http.StatusOK, "deviceManagement.tmpl", gin.H{"title": "Device Management"})
+		})
+		router.GET("/web-ui/members", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "members.tmpl", gin.H{
+				"title": "Wild Apricot Members Portal",
+			})
 		})
 	}
 }
