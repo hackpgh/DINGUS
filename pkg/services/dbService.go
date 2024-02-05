@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"rfid-backend/config"
-	"rfid-backend/models"
-	"rfid-backend/webhooks"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/models"
+	"rfid-backend/pkg/webhooks"
 	"strconv"
 	"strings"
 

@@ -16,10 +16,11 @@ func mockConfig() *config.Config {
 		CertFile:             "path/to/test/cert.pem",
 		KeyFile:              "path/to/test/key.pem",
 		DatabasePath:         "path/to/test/database.db",
-		RFIDFieldName:        "RFID",
+		TagIdFieldName:       "RFID",
 		TrainingFieldName:    "Training",
 		WildApricotAccountId: 12345,
 		ContactFilterQuery:   "status eq Active or status eq 'Pending - Renewal'",
+		LokiHookURL:          "https://localhost/loki",
 	}
 }
 

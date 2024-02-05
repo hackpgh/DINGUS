@@ -3,7 +3,7 @@
 package setup
 
 import (
-	"rfid-backend/services"
+	"rfid-backend/pkg/services"
 	"time"
 
 	"github.com/sirupsen/logrus"

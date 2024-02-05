@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"rfid-backend/config"
+	"rfid-backend/pkg/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

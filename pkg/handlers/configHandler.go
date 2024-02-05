@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"rfid-backend/config"
+	"rfid-backend/pkg/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

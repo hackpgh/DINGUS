@@ -3,8 +3,8 @@ package handlers
 import (
 	"net"
 	"net/http"
-	"rfid-backend/config"
-	"rfid-backend/services"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/services"
 	"strings"
 
 	"github.com/gin-gonic/gin"

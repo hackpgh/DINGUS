@@ -3,8 +3,8 @@ package setup
 
 import (
 	"database/sql"
-	"rfid-backend/config"
-	"rfid-backend/db"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/db"
 
 	"github.com/sirupsen/logrus"
 )

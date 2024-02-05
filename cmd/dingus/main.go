@@ -38,9 +38,9 @@ package main
 import (
 	"log"
 
-	"rfid-backend/config"
-	"rfid-backend/services"
-	"rfid-backend/setup"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/services"
+	"rfid-backend/pkg/setup"
 
 	"github.com/gin-gonic/gin"
 )

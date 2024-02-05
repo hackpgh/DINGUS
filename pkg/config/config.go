@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"rfid-backend/utils"
+	"rfid-backend/pkg/utils"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

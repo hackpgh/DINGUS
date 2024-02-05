@@ -3,7 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
-	"rfid-backend/config"
+	"rfid-backend/pkg/config"
 	"strconv"
 )
 
@@ -73,14 +73,13 @@ func (c *Contact) ExtractTagID(cfg *config.Config) (uint32, error) {
 	return 0, nil
 }
 
-// Extracts training labels from contact field values.
 func (c *Contact) ExtractTrainingLabels(cfg *config.Config) ([]string, error) {
 	for _, val := range c.FieldValues {
 		if val.FieldName == cfg.TrainingFieldName {
 			return parseTrainingLabels(val)
 		}
 	}
-	return nil, nil // Return nil if Training field is not found
+	return nil, nil
 }
 
 func parseAdminRole(fieldValue FieldValue) (bool, error) {

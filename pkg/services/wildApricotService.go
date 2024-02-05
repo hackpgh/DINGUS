@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"rfid-backend/config"
-	"rfid-backend/models"
-	"rfid-backend/utils"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/models"
+	"rfid-backend/pkg/utils"
 	"strings"
 	"time"
 

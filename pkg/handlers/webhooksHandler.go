@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"rfid-backend/config"
-	"rfid-backend/services"
-	"rfid-backend/webhooks"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/services"
+	"rfid-backend/pkg/webhooks"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

@@ -3,10 +3,10 @@ package setup
 import (
 	"database/sql"
 	"net/http"
-	"rfid-backend/auth"
-	"rfid-backend/config"
-	"rfid-backend/handlers"
-	"rfid-backend/services"
+	"rfid-backend/pkg/auth"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/handlers"
+	"rfid-backend/pkg/services"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

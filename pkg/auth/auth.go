@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"rfid-backend/config"
-	"rfid-backend/models"
-	"rfid-backend/services"
+	"rfid-backend/pkg/config"
+	"rfid-backend/pkg/models"
+	"rfid-backend/pkg/services"
 	"strings"
 
 	"github.com/gin-contrib/sessions"
@@ -97,7 +97,7 @@ func (a *Auth) OAuthCallback(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	a.Logger.Infof("user id obtained successfully: %s", contact.Id)
+	a.Logger.Infof("user id obtained successfully: %d", contact.Id)
 	a.handleUserSession(c, contact)
 }
 
@@ -171,7 +171,7 @@ func (a *Auth) handleUserSession(c *gin.Context, contact *models.Contact) {
 		return
 	}
 
-	a.Logger.Infof("User session saved for user ID: %s", contact.Id)
+	a.Logger.Infof("User session saved for user ID: %d", contact.Id)
 	c.Redirect(http.StatusFound, "/web-ui/home")
 }
 

@@ -3,7 +3,7 @@ package setup
 
 import (
 	"os"
-	"rfid-backend/config"
+	"rfid-backend/pkg/config"
 
 	loki "github.com/saromanov/logrus-loki-hook"
 	"github.com/sirupsen/logrus"
