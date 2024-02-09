@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:latest
+    command:
+      - "--log.level=INFO"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=youremail@example.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - core
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls.certresolver=myresolver"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+    networks:
+      - core
+
+volumes:
+  portainer_data:
+
+networks:
+  core:
+    name: core
+    external: false

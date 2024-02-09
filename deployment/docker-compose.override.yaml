@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  dingus:
+    build:
+      context: .
+      dockerfile: DOCKERFILE
+    volumes:
+      - type: bind
+        source: ./certs/dev_pubkey.pem
+        target: /home/dingus/certs/dev_pubkey.pem
+        read_only: true
+      - type: bind
+        source: ./certs/dev_secret.pem
+        target: /home/dingus/certs/dev_secret.pem
+        read_only: true

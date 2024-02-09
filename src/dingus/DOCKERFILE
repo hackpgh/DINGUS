@@ -1,0 +1,53 @@
+# file: DOCKERFILE
+# Use the official Golang image as the build environment.
+FROM golang:latest as builder
+
+# Set the working directory inside the container.
+WORKDIR /build
+
+# Copy the go.mod and go.sum files to the container to download dependencies.
+COPY go.mod go.sum ./
+
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files have not changed.
+RUN go mod download
+
+# Copy the project code into the build environment
+COPY . .
+
+# Build the application
+# No longer need CGO_ENABLED=1 for SQLite, unless other dependencies require it
+RUN CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -installsuffix netgo -ldflags '-w -extldflags "-static"' -o main ./cmd/dingus
+
+# Create app execution environment
+FROM alpine:latest  
+
+# Add ca-certificates in case your application needs to make HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+# Create a group and user
+RUN addgroup -S dingus && adduser -S dingus -G dingus
+
+# Set the working directory to the user's home directory
+WORKDIR /home/dingus
+
+# Copy the pre-built binary file from the builder stage
+COPY --from=builder /build/main .
+
+# Copy other necessary files like the configuration file and any static assets
+COPY --from=builder /build/config.yaml .
+COPY --from=builder /build/pkg/web-ui /home/dingus/pkg/web-ui
+
+# Expose the port your app runs on
+EXPOSE 443
+
+# Ensure the binary is executable
+RUN chmod +x ./main
+
+# Ensure the dingus user owns the application files
+RUN chown -R dingus:dingus /home/dingus
+
+# Change to non-root user
+USER dingus
+
+# Command to run the executable
+CMD ["./main"]

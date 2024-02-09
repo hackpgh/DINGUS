@@ -1,0 +1,7 @@
+#file: config.yaml
+contact_filter_query: "Status eq Active or Status eq PendingRenewal"
+#database_path: /home/dingus/db/tagsdb.sqlite
+tag_id_field_name: Door Key
+training_field_name: Safety Training
+wild_apricot_account_id: 123456
+loki_hook_url: http://your-loki-instance:3100/loki/api/v1/push

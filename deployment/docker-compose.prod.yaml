@@ -1,0 +1,81 @@
+# file: deployment/docker-compose.prod.yaml
+version: '3.8'
+
+services:
+  dingus:
+    image: your-registry/your-image:tag
+    ports:
+      - "443:443"
+    volumes:
+      - type: bind
+        source: /path/to/production/certs/dev_pubkey.pem
+        target: /home/dingus/certs/dev_pubkey.pem
+        read_only: true
+      - type: bind
+        source: /path/to/production/certs/dev_secret.pem
+        target: /home/dingus/certs/dev_secret.pem
+        read_only: true
+    env_file:
+      - .env.prod
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - db
+      - default
+    user: dingus
+
+  postgres:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pkg/db/schema/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./pkg/db/schema/tagsdb.sql:/docker-entrypoint-initdb.d/tagsdb.sql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    networks:
+      - db
+    restart: on-failure:3
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+
+  traefik:
+      image: traefik:v2.5 # Use a specific version or 'latest'
+      command:
+        - "--log.level=INFO"
+        - "--api.dashboard=true"
+        - "--providers.docker=true"
+        - "--providers.docker.exposedByDefault=false"
+        - "--entrypoints.web.address=:80"
+        - "--entrypoints.websecure.address=:443"
+        - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+        - "--certificatesresolvers.myresolver.acme.email=youremail@example.com"
+        - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+        # Add more Traefik command options as needed
+      ports:
+        - "80:80"    # HTTP
+        - "443:443"  # HTTPS
+        - "8080:8080" # Traefik Dashboard
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - "./letsencrypt:/letsencrypt" # Ensure this path matches your setup
+        - "./deployment/traefik/traefik.yml:/traefik.yml"
+        - "./deployment/traefik/dynamic.conf:/dynamic.conf"
+      networks:
+        - web
+volumes:
+  postgres_data:
+  my_db_volume:
+
+networks:
+  db:
+  web:
+    external: true

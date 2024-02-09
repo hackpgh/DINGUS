@@ -126,6 +126,10 @@ Run `go test` to execute the unit tests.
 -   `/webhooks`: Wild Apricot webhooks endpoint.
 -   `/registerDevice`: DEPRECATED - Process registration requests from ESP controllers on the network.
 
+```sh
+docker-compose -f docker-compose.yaml up -d
+```
+
 ## Contributing
 
 Contributions to improve the DINGUS project are welcome. Please follow the [standard pull request process](CONTRIBUTING.md) for your contributions.
