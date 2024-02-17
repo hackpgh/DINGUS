@@ -86,8 +86,8 @@ func (s *DBService) GetAllTrainings() ([]string, error) {
 	return devices, nil
 }
 
-func (s *DBService) GetDevices() ([]string, error) {
-	var devices []string
+func (s *DBService) GetDevices() ([]models.Device, error) {
+	var devices []models.Device
 
 	rows, err := s.db.Query(GetAllDevicesQuery)
 	if err != nil {
@@ -96,14 +96,34 @@ func (s *DBService) GetDevices() ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var d string
-		if err := rows.Scan(&d); err != nil {
+		var d models.Device
+		if err := rows.Scan(&d.IPAddress, &d.MACAddress); err != nil {
 			return nil, err
 		}
 		devices = append(devices, d)
 	}
 
 	return devices, nil
+}
+
+func (s *DBService) GetDevicesTrainings() ([]models.DeviceTrainingLink, error) {
+	var result []models.DeviceTrainingLink
+
+	rows, err := s.db.Query(GetAllDevicesTrainingsQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var dt models.DeviceTrainingLink
+		if err := rows.Scan(&dt.MACAddress, &dt.Label); err != nil {
+			return nil, err
+		}
+		result = append(result, dt)
+	}
+
+	return result, nil
 }
 
 func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
@@ -153,6 +173,16 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// TagExists checks if a tag exists in the members table
+func (s *DBService) TagExists(tag string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow(TagExistsQuery, tag).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (s *DBService) processDatabaseUpdatesAndDeletes(tx *sql.Tx, allContacts []int, allTagIds []uint32, trainingMap map[string][]uint32) error {
@@ -227,7 +257,7 @@ func (s *DBService) insertTrainings(tx *sql.Tx, trainingMap map[string][]uint32)
 	return nil
 }
 
-func (s *DBService) InsertDevice(ip string, requiresTraining int) error {
+func (s *DBService) InsertDevice(ip, mac string, requiresTraining int) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -238,7 +268,7 @@ func (s *DBService) InsertDevice(ip string, requiresTraining int) error {
 	}
 	defer deviceStmt.Close()
 
-	if _, err := deviceStmt.Exec(ip, requiresTraining); err != nil {
+	if _, err := deviceStmt.Exec(ip, mac, requiresTraining); err != nil {
 		return err
 	}
 	s.log.Info("Inserted device successfully")
@@ -251,7 +281,7 @@ func (s *DBService) InsertDeviceTrainingLink(ip, trainingLabel string) error {
 		return err
 	}
 
-	deleteStmt, err := tx.Prepare("DELETE FROM devices_trainings_link WHERE ip_address = ?")
+	deleteStmt, err := tx.Prepare("DELETE FROM devices_trainings_link WHERE mac_address = ?")
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -263,7 +293,7 @@ func (s *DBService) InsertDeviceTrainingLink(ip, trainingLabel string) error {
 		return err
 	}
 
-	insertStmt, err := tx.Prepare("INSERT INTO devices_trainings_link (ip_address, label) VALUES (?, ?)")
+	insertStmt, err := tx.Prepare("INSERT INTO devices_trainings_link (mac_address, label) VALUES (?, ?)")
 	if err != nil {
 		tx.Rollback()
 		return err

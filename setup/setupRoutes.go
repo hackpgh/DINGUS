@@ -46,15 +46,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 	url := ginSwagger.URL("https://localhost:443/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
-	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger)
+	registrationHandler := handlers.NewRegistrationHandler(dbService, cfg, logger) //scoped outside api bc it's also used further down
 	api := router.Group("/api")
 	{
 		webhooksHandler := handlers.NewWebhooksHandler(waService, dbService, cfg, logger)
 		configHandler := handlers.NewConfigHandler(logger)
+		accessControlHandler := handlers.NewAccessControlHandler(dbService, logger)
 
+		api.POST("authenticate", accessControlHandler.HandleAuthenticate)
 		api.POST("/updateConfig", configHandler.UpdateConfig)
 		api.POST("/webhooks", webhooksHandler.HandleWebhook)
-		api.POST("/registerDevice", registrationHandler.HandleRegisterDevice)
+		api.POST("/register", registrationHandler.HandleRegisterDevice)
 		api.POST("/updateDeviceAssignments", registrationHandler.UpdateDeviceAssignments)
 	}
 
@@ -63,10 +65,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 	router.Static("/assets", "./web-ui/assets")
 	router.LoadHTMLGlob("web-ui/templates/*")
 
-	setupWebUIRoutes(router, logger)
+	setupWebUIRoutes(router, dbService, cfg, logger)
 }
 
-func setupWebUIRoutes(router *gin.Engine, logger *logrus.Logger) {
+func setupWebUIRoutes(router *gin.Engine, dbService *services.DBService, cfg *config.Config, logger *logrus.Logger) {
+	rh := handlers.NewRegistrationHandler(dbService, cfg, logger)
 	webUI := router.Group("/web-ui")
 	{
 		webUI.Use(auth.RequireAuth)
@@ -77,8 +80,6 @@ func setupWebUIRoutes(router *gin.Engine, logger *logrus.Logger) {
 		webUI.GET("/configManagement", func(c *gin.Context) {
 			c.HTML(http.StatusOK, "configManagement.tmpl", gin.H{"title": "Configuration Management"})
 		})
-		webUI.GET("/deviceManagement", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "deviceManagement.tmpl", gin.H{"title": "Device Management"})
-		})
+		webUI.GET("/deviceManagement", rh.ServeDeviceManagementPage)
 	}
 }

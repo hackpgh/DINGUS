@@ -5,17 +5,34 @@ document.getElementById('deviceManagementForm').addEventListener('submit', funct
         return;
     }
 
-    let formData = new FormData(this);
+    // Initialize an array to hold the assignment objects
+    let assignments = [];
+    document.querySelectorAll('#deviceList tr').forEach(row => {
+        let ipAddress = row.querySelector('td:nth-child(1)').textContent.trim();
+        let macAddress = row.querySelector('td:nth-child(2)').textContent.trim(); // No need to replace colons for JSON
+        let selectedTraining = row.querySelector('select').value;
+
+        // Push an object for each row into the assignments array
+        assignments.push({
+            ipAddress: ipAddress,
+            macAddress: macAddress,
+            trainingLabel: selectedTraining
+        });
+    });
 
     fetch(this.action, {
         method: this.method,
-        body: formData,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assignments), // Convert the array to JSON
     })
-    .then(response => {
-        if (response.ok) {
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
             showToast("Device assignments updated successfully.");
         } else {
-            showToast("Failed to update device assignments.");
+            showToast(data.message || "Failed to update device assignments.");
         }
     })
     .catch(() => {
@@ -23,23 +40,21 @@ document.getElementById('deviceManagementForm').addEventListener('submit', funct
     });
 });
 
+
 function validateForm() {
     let isValid = true;
-    let trainingLabelSet = new Set();
     let allSelects = document.querySelectorAll('#deviceList select');
+
+    // Reset validation state
+    allSelects.forEach(select => select.classList.remove('is-invalid'));
 
     allSelects.forEach(select => {
         if (select.value === '') {
+            // Highlight the invalid select element
+            select.classList.add('is-invalid');
             showToast("Please assign a training label to all devices.");
             isValid = false;
-            return;
         }
-        if (trainingLabelSet.has(select.value)) {
-            showToast("Each training label can only be assigned to one device.");
-            isValid = false;
-            return;
-        }
-        trainingLabelSet.add(select.value);
     });
 
     return isValid;
@@ -47,9 +62,16 @@ function validateForm() {
 
 function showToast(message) {
     let toastElement = document.querySelector('.toast');
-    let toastBody = toastElement.querySelector('.toast-body');
+    let toastBody = toastElement.querySelector('.toast-body') || toastElement; // Fallback to toastElement if .toast-body not found
     toastBody.textContent = message;
 
-    $(toastElement).toast({ delay: 3000 });
-    $(toastElement).toast('show');
+    // Use Bootstrap's Toast component if available, otherwise fallback
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        let toast = new bootstrap.Toast(toastElement);
+        toast.show();
+    } else {
+        // Fallback or custom toast display logic
+        toastElement.style.display = 'block';
+        setTimeout(() => toastElement.style.display = 'none', 3000);
+    }
 }

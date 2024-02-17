@@ -1,6 +1,10 @@
 package services
 
 const (
+	TagExistsQuery = `
+		SELECT EXISTS(SELECT 1 FROM members WHERE tag_id = ?)
+	`
+
 	GetTagIdsForTrainingQuery = `
         SELECT tag_id
         FROM members_trainings_link
@@ -19,7 +23,7 @@ const (
 	`
 
 	GetAllDevicesQuery = `
-		SELECT ip_address
+		SELECT ip_address, mac_address
 		FROM devices;
 	`
 
@@ -27,6 +31,11 @@ const (
         SELECT tag_id
         FROM members;
     `
+
+	GetAllDevicesTrainingsQuery = `
+	SELECT mac_address, label
+	FROM devices_trainings_link;
+	`
 
 	InsertOrUpdateMemberQuery = `
 		INSERT OR IGNORE INTO members (contact_id, tag_id, membership_level)
@@ -45,15 +54,15 @@ const (
     `
 
 	InsertDeviceQuery = `
-        INSERT OR IGNORE INTO devices (ip_address, requires_training)
-        VALUES (?, ?);
+        INSERT OR IGNORE INTO devices (ip_address, mac_address, requires_training)
+        VALUES (?, ?, ?);
     `
 
 	InsertDeviceTrainingLinkQuery = `
-		INSERT INTO devices_trainings_link (ip_address, label)
+		INSERT INTO devices_trainings_link (mac_address, label)
 		VALUES (?, ?)
-		ON CONFLICT(ip_address, label) DO UPDATE 
-		SET ip_address = EXCLUDED.ip_address;
+		ON CONFLICT(mac_address, label) DO UPDATE 
+		SET mac_address = EXCLUDED.mac_address;
 	`
 
 	DeleteInactiveMembersQuery = `
@@ -66,6 +75,6 @@ const (
 
 	DeleteDeviceTrainingLinkQuery = `
 		DELETE FROM devices_trainings_link
-		WHERE ip_address = ?;
+		WHERE mac_address = ?;
 	`
 )

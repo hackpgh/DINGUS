@@ -14,18 +14,21 @@
                 <thead class="thead-light">
                     <tr>
                         <th>Device IP</th>
+                        <th>MAC Address</th>
                         <th>Training Label</th>
                     </tr>
                 </thead>
                 <tbody id="deviceList">
-                    {{range .Devices}}
+                    {{range .DevicesWithLabels}}
                     <tr>
-                        <td>{{.}}</td>
+                        <td>{{.IPAddress}}</td>
+                        <td>{{.MACAddress}}</td>
                         <td>
-                            <select name="{{.}}" class="form-control">
+                            <select name="training_{{.MACAddress}}" class="form-control">
                                 <option value="">Select Training</option>
                                 {{range $.Trainings}}
-                                <option value="{{.}}">{{.}}</option>
+                                <!-- Correctly check if the current training option matches the device's selected training -->
+                                <option value="{{.}}" {{if eq . $.SelectedTraining}}selected{{end}}>{{.}}</option>
                                 {{end}}
                             </select>
                         </td>

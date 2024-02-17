@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"rfid-backend/config"
@@ -10,6 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
+
+type DeviceWithTraining struct {
+	IPAddress        string
+	MACAddress       string
+	SelectedTraining string
+}
 
 type RegistrationHandler struct {
 	cfg       *config.Config
@@ -36,12 +43,6 @@ func NewRegistrationHandler(dbService *services.DBService, cfg *config.Config, l
 // @Failure 500  {string}  string "Internal Server Error"
 // @Router /api/registerDevice [post]
 func (rh *RegistrationHandler) HandleRegisterDevice(c *gin.Context) {
-	trainingLabel := c.Query("trainingLabel")
-	if trainingLabel == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Device name is required"})
-		return
-	}
-
 	ip, _, err := net.SplitHostPort(c.Request.RemoteAddr)
 	if err != nil {
 		rh.log.Errorf("Failed to get IP address: %v", err)
@@ -49,42 +50,30 @@ func (rh *RegistrationHandler) HandleRegisterDevice(c *gin.Context) {
 		return
 	}
 
-	rh.log.Infof("Registering device %s : %s", trainingLabel, ip)
-	switch {
-	case strings.Contains(strings.ToLower(trainingLabel), "door"):
-		err := rh.dbService.InsertDevice(ip, 0) // SQLite uses integer 0 & 1 instead of a bool type
-		if err != nil {
-			rh.log.Errorf("Failed to insert device: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device"})
-			return
-		}
-	default:
-		err := rh.dbService.InsertDevice(ip, 1)
-		if err != nil {
-			rh.log.Errorf("Failed to insert device: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device"})
-			return
-		}
-	}
-
-	// Checking if device requires training
-	training, err := rh.dbService.GetTraining(trainingLabel)
+	bodyBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		rh.log.Errorf("Failed to get training for device: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get training for device"})
+		rh.log.Errorf("Failed to read request body: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read MAC address from request body"})
+		return
+	}
+	macAddress := string(bodyBytes)
+
+	if macAddress == "" {
+		rh.log.Errorf("MAC address is empty")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "MAC address is required"})
 		return
 	}
 
-	if len(training) > 0 {
-		err = rh.dbService.InsertDeviceTrainingLink(ip, training)
-		if err != nil {
-			rh.log.Errorf("Failed to insert device training link: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device training link"})
-			return
-		}
+	rh.log.Infof("Registering device with IP %s and MAC %s", ip, macAddress)
+
+	err = rh.dbService.InsertDevice(ip, macAddress, 0)
+	if err != nil {
+		rh.log.Errorf("Failed to insert device: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device"})
+		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "Device registered successfully"})
 }
 
 // @Summary Serve Device Management Page
@@ -108,56 +97,80 @@ func (rh *RegistrationHandler) ServeDeviceManagementPage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get trainings"})
 		return
 	}
+	trainings = append(trainings, "Door") // Manually append Door since it is not a device that requires training i.e. not on the DB
 
-	c.HTML(http.StatusOK, "deviceManagement.html", gin.H{
-		"Devices":   devices,
-		"Trainings": trainings,
-	})
-}
-
-func (rh *RegistrationHandler) UpdateDeviceAssignments(c *gin.Context) {
-	formData := make(map[string]string)
-
-	if err := c.Bind(formData); err != nil {
-		rh.log.Errorf("Failed to bind form data: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+	dtl, err := rh.dbService.GetDevicesTrainings()
+	if err != nil {
+		rh.log.Errorf("Failed to get device mappings: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get trainings"})
 		return
 	}
 
-	for ip, trainingLabel := range formData {
+	macToTraining := make(map[string]string)
+	for _, dt := range dtl {
+		macToTraining[dt.MACAddress] = dt.Label
+	}
 
-		rh.log.Infof("Inserting Device %s", ip)
-		switch {
-		case strings.Contains(strings.ToLower(trainingLabel), "door"):
-			err := rh.dbService.InsertDevice(ip, 0) // SQLite uses integer 0 & 1 instead of a bool type
-			if err != nil {
-				rh.log.Errorf("Failed to insert device: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device"})
-				return
-			}
-		default:
-			rh.log.Infof("Training required detected")
-			err := rh.dbService.InsertDevice(ip, 1)
-			if err != nil {
-				rh.log.Errorf("Failed to insert device: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert device"})
-				return
-			}
-		}
+	var devicesWithLabels []DeviceWithTraining
+	for _, device := range devices {
+		selectedTraining := macToTraining[device.MACAddress]
+		devicesWithLabels = append(devicesWithLabels, DeviceWithTraining{
+			IPAddress:        device.IPAddress,
+			MACAddress:       device.MACAddress,
+			SelectedTraining: selectedTraining,
+		})
+	}
 
-		rh.log.Infof("Updating Device Assignment %s:%s", ip, trainingLabel)
-		if trainingLabel != "" {
-			if err := rh.dbService.InsertDeviceTrainingLink(ip, trainingLabel); err != nil {
-				rh.log.Errorf("Failed to update device training link for device %s: %v", ip, err)
+	c.HTML(http.StatusOK, "deviceManagement.tmpl", gin.H{
+		"DevicesWithLabels": devicesWithLabels,
+		"Trainings":         trainings,
+	})
+}
+
+type DeviceAssignment struct {
+	IPAddress     string `json:"ipAddress"`
+	MACAddress    string `json:"macAddress"`
+	TrainingLabel string `json:"trainingLabel"`
+}
+
+func (rh *RegistrationHandler) UpdateDeviceAssignments(c *gin.Context) {
+	var assignments []DeviceAssignment
+
+	// Bind the incoming JSON payload to the assignments slice
+	if err := c.BindJSON(&assignments); err != nil {
+		rh.log.Errorf("Failed to bind JSON data: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
+		return
+	}
+
+	// Iterate over each assignment and process it
+	for _, assignment := range assignments {
+		rh.log.Infof("Processing assignment for device %s", assignment.MACAddress)
+
+		// Determine if a training label indicates a special condition (e.g., "door")
+		trainingRequired := strings.Contains(strings.ToLower(assignment.TrainingLabel), "door")
+
+		// Insert or update the device with its training label as needed
+		if trainingRequired {
+			err := rh.dbService.InsertDevice(assignment.IPAddress, assignment.MACAddress, 1)
+			if err != nil {
+				rh.log.Errorf("Failed to insert device assignment for %s: %v", assignment.MACAddress, err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device assignments"})
 				return
 			}
 		} else {
-			if err := rh.dbService.DeleteDeviceTrainingLink(ip); err != nil {
-				rh.log.Errorf("Failed to delete device training link for device %s: %v", ip, err)
+			err := rh.dbService.InsertDevice(assignment.IPAddress, assignment.MACAddress, 0)
+			if err != nil {
+				rh.log.Errorf("Failed to insert device assignment for %s: %v", assignment.MACAddress, err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device assignments"})
 				return
 			}
+		}
+		err := rh.dbService.InsertDeviceTrainingLink(assignment.MACAddress, assignment.TrainingLabel)
+		if err != nil {
+			rh.log.Errorf("Failed to process device assignment for %s: %v", assignment.MACAddress, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device assignments"})
+			return
 		}
 	}
 
