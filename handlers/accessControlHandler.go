@@ -59,8 +59,8 @@ func (ach *AccessControlHandler) HandleAuthenticate(c *gin.Context) {
 	}
 }
 
-func (ach *AccessControlHandler) authenticateTag(tag string) bool {
-	exists, err := ach.dbService.TagExists(tag)
+func (ach *AccessControlHandler) authenticateTag(raw_tag string) bool {
+	exists, err := ach.dbService.TagExists(raw_tag)
 	if err != nil {
 		ach.log.Printf("Error checking tag existence: %v", err)
 		return false

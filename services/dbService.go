@@ -176,9 +176,15 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 }
 
 // TagExists checks if a tag exists in the members table
-func (s *DBService) TagExists(tag string) (bool, error) {
+func (s *DBService) TagExists(raw_tag string) (bool, error) {
 	var exists bool
-	err := s.db.QueryRow(TagExistsQuery, tag).Scan(&exists)
+	tag, err := strconv.Atoi(raw_tag)
+	if err != nil {
+		s.log.Errorf("tag value %s is not a number", raw_tag)
+		return false, err
+	}
+
+	err = s.db.QueryRow(TagExistsQuery, tag).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
