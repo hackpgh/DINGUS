@@ -72,6 +72,11 @@ func (c *Contact) ExtractContactData(cfg *config.Config) (int, uint32, []string,
 }
 
 func parseTagId(fieldValue FieldValue) (uint32, error) {
+	// Check that the field has a value before trying to convert it to a string.
+	if fieldValue.Value == nil {
+		return 0, nil
+	}
+
 	strVal, ok := fieldValue.Value.(string)
 	if !ok {
 		return 0, errors.New("TagId value is not a string")
