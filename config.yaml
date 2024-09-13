@@ -1,7 +1,7 @@
-cert_file: .ssh/id_rsa/dev_pubkey.pem
+cert_file: cert.pem
 contact_filter_query: "(Status eq Active or Status eq PendingRenewal) and 'Door Key' ne NULL"
-database_path: db/data/tagsdb.sqlite
-key_file: .ssh/id_rsa/dev_secret.pem
+database_path: data/tagsdb.sqlite
+key_file: key.pem
 tag_id_field_name: Door Key
 training_field_name: Safety Training
 wild_apricot_account_id: 232582

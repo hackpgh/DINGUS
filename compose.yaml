@@ -1,0 +1,5 @@
+services:
+  dingus-server:
+    build: .
+    ports:
+      - "443:443"
