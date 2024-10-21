@@ -137,16 +137,17 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 			return err
 		}
 
-		if contactId != 0 {
+		if contactId != 0 && tagId != 0 {
+			// Only
 			allContacts = append(allContacts, contactId)
-		}
-
-		if tagId != 0 {
 			allTagIds = append(allTagIds, tagId)
-		}
-
-		for _, label := range trainingLabels {
-			trainingMap[label] = append(trainingMap[label], tagId)
+			for _, label := range trainingLabels {
+				trainingMap[label] = append(trainingMap[label], tagId)
+			}
+		} else {
+			if contactId != 0 {
+				s.log.Infof("Contact %d is missing a TagId", contactId)
+			}
 		}
 	}
 
@@ -155,12 +156,6 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 	// resultId is refreshing - DEPRECATED?
 	if len(allTagIds) <= 0 {
 		return errors.New("allTagIds list, parsed from Wild Apricot, was empty")
-	}
-
-	missingTags := len(contacts) - len(allTagIds)
-	if missingTags > 0 {
-		s.log.Infof("Total empty TagId values detected: %d", missingTags)
-		s.log.Info("Will ignore contact if awaiting onboarding, otherwise deleting member")
 	}
 
 	tx, err := s.db.Begin()
@@ -219,6 +214,9 @@ func (s *DBService) insertOrUpdateAllMembers(tx *sql.Tx, allContacts []int, allT
 		return err
 	}
 	defer memberStmt.Close()
+
+	s.log.Info("allContacts length: ", len(allContacts))
+	s.log.Info("allTagIds length:", len(allTagIds))
 
 	for i := 0; i < len(allContacts); i++ {
 		membershipLevel := 1 // Placeholder for actual membership level
