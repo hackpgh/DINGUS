@@ -48,15 +48,28 @@ This project is an RFID access control system's backend server written in Golang
 -   `web-ui`: Frontend assets.
 
 ## Getting Started
+### Docker
+#### Build
+`docker-compose build`
+#### Run Interactive
+`docker-compose up`
 
-### Prerequisites
+`ctrl-c` to stop.
+
+#### Run in background (Detached)
+`docker-compose up -d`
+#### Stop
+`docker-compose down`
+
+### Native
+#### Prerequisites
 
 -   [Go](https://go.dev/doc/install) (latest stable version)
 -   Access to [Wild Apricot API](https://gethelp.wildapricot.com/en/articles/182-using-wildapricot-s-api)
 -   SSL certificate and key
 -   GCC for SQLite Go package compilation (requires cgo)
 
-### Setting CGO_ENABLED
+#### Setting CGO_ENABLED
 
 To successfully build and run this project, `CGO_ENABLED` must be set to `1`. This allows for the compilation of C code, a requirement for the SQLite package used in the project.
 

@@ -1,5 +1,0 @@
-# This file is here in order to commit the empty data folder to the git repo.
-# Ignore everything in this directory
-*
-# Except this file
-!.gitignore
