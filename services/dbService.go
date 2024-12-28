@@ -134,7 +134,8 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 	for _, contact := range contacts {
 		contactId, tagId, trainingLabels, err := contact.ExtractContactData(s.cfg)
 		if err != nil {
-			return err
+			// output the error and save any data that was retrieved.
+			s.log.Error(err)
 		}
 
 		if contactId != 0 && tagId != 0 {
@@ -167,6 +168,7 @@ func (s *DBService) ProcessContactsData(contacts []models.Contact) error {
 		tx.Rollback()
 		return err
 	}
+
 	return tx.Commit()
 }
 

@@ -65,10 +65,10 @@ func (c *Contact) ExtractContactData(cfg *config.Config) (int, uint32, []string,
 
 	trainingLabels, err := c.ExtractTrainingLabels(cfg)
 	if err != nil {
-		return 0, 0, nil, fmt.Errorf("error extracting training labels for contact %d: %v", c.Id, err)
+		err = fmt.Errorf("error extracting training labels for contact %d: %v", c.Id, err)
 	}
 
-	return c.Id, tagID, trainingLabels, nil
+	return c.Id, tagID, trainingLabels, err
 }
 
 func parseTagId(fieldValue FieldValue) (uint32, error) {
