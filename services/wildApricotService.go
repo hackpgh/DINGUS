@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"rfid-backend/config"
@@ -47,7 +46,7 @@ func NewWildApricotService(cfg *config.Config, logger *logrus.Logger) *WildApric
 
 func readResponseBody(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func handleHTTPError(resp *http.Response) error {
@@ -169,6 +168,7 @@ func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
 	}
 
 	s.log.Infof("Parsed %d contacts from response", len(contacts))
+
 	return contacts, nil
 }
 

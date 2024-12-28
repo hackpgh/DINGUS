@@ -1,0 +1,12 @@
+#!/bin/sh
+
+export WILD_APRICOT_API_KEY=ilyglbbwzai5suuxt4nai0kqx5evvh
+export WILD_APRICOT_WEBHOOK_TOKEN=08a7gv08abwDYGd77cxv980asdfy98zxc87
+export WILD_APRICOT_SSO_CLIENT_ID=t8jw60pj3f
+export WILD_APRICOT_SSO_CLIENT_SECRET=5k8nct39ootl8wt0gkpxe22v8phi5a
+export WILD_APRICOT_SSO_REDIRECT_URI=/replaceme
+export LOG_LEVEL=INFO
+export COOKIE_STORE_SECRET=cookiestoresecret
+export CGO_ENABLED=1
+export GOOS=linux
+/usr/local/go/bin/go build -o dingus-server
