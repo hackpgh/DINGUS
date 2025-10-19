@@ -32,4 +32,4 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o dingus-server
 EXPOSE 443
 
 # Run
-CMD ["/app/run.sh"]
+CMD ["sh","/app/run.sh"]
