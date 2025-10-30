@@ -31,7 +31,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, db *sql.DB, logger *log
 		RedirectURL:  cfg.SSORedirectURI,
 		Scopes:       []string{"contacts_me"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://davidbouw36728.wildapricot.org/sys/login/OAuthLogin",
+			AuthURL:  "https://members.hackpgh.org/sys/login/OAuthLogin",
 			TokenURL: "https://oauth.wildapricot.org/auth/token",
 		},
 	}

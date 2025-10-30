@@ -31,6 +31,7 @@ type Config struct {
 	CookieStoreSecret       string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
 	WildApricotApiKey       string
 	WildApricotWebhookToken string
+	RFIDFieldName           string
 	log                     *logrus.Logger
 }
 

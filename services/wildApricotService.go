@@ -27,6 +27,7 @@ type WildApricotService struct {
 }
 
 var wildApricotSvc = utils.NewSingleton(&WildApricotService{})
+var pageSize = 100
 
 func NewWildApricotService(cfg *config.Config, logger *logrus.Logger) *WildApricotService {
 	return wildApricotSvc.Get(func() interface{} {
@@ -147,29 +148,42 @@ func (s *WildApricotService) makeHTTPRequest(method, url string, body io.Reader)
 }
 
 func (s *WildApricotService) GetContacts() ([]models.Contact, error) {
-	contactURL := s.buildURL("/%d/Contacts?$async=false&$filter=%s",
-		s.cfg.WildApricotAccountId,
-		url.QueryEscape(s.cfg.ContactFilterQuery))
+	skip := 0
+	allContacts := []models.Contact{}
+	for {
+		contactURL := s.buildURL("/%d/Contacts?$async=false&$filter=%s&$top=%d&$skip=%d",
+			s.cfg.WildApricotAccountId,
+			url.QueryEscape(s.cfg.ContactFilterQuery),
+			pageSize,
+			skip)
 
-	resp, err := s.makeHTTPRequest("GET", contactURL, nil)
-	if err != nil {
-		s.logError("creating request for contacts", err)
-		return nil, err
+		// Increment skip by page size.
+		skip += pageSize
+
+		resp, err := s.makeHTTPRequest("GET", contactURL, nil)
+		if err != nil {
+			s.logError("creating request for contacts", err)
+			return nil, err
+		}
+
+		if err := handleHTTPError(resp); err != nil {
+			s.logError("handling HTTP error for contacts", err)
+			return nil, err
+		}
+
+		contacts, err := s.parseHTTPResponse(resp)
+		if err != nil {
+			s.logError("parsing HTTP response", err)
+		}
+
+		allContacts = append(allContacts, contacts...)
+
+		if len(contacts) < pageSize {
+			break
+		}
 	}
-
-	if err := handleHTTPError(resp); err != nil {
-		s.logError("handling HTTP error for contacts", err)
-		return nil, err
-	}
-
-	contacts, err := s.parseHTTPResponse(resp)
-	if err != nil {
-		s.logError("parsing HTTP response", err)
-	}
-
-	s.log.Infof("Parsed %d contacts from response", len(contacts))
-
-	return contacts, nil
+	s.log.Infof("All Contacts Length %d", len(allContacts))
+	return allContacts, nil
 }
 
 func (s *WildApricotService) GetContact(contactId int) (*models.Contact, error) {
