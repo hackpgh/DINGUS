@@ -22,7 +22,10 @@ COPY data ./data
 COPY web-ui ./web-ui
 COPY config.yaml key.pem cert.pem main.go rsakey.pem build.sh run.sh ./
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o dingus-server
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+
+RUN go build -o dingus-server
 
 # Optional:
 # To bind to a TCP port, runtime parameters must be supplied to the docker command.
@@ -30,6 +33,8 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o dingus-server
 # the application is going to listen on by default.
 # https://docs.docker.com/reference/dockerfile/#expose
 EXPOSE 443
+
+
 
 # Run
 CMD ["/app/run.sh"]

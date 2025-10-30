@@ -5,7 +5,6 @@ export WILD_APRICOT_WEBHOOK_TOKEN=08a7gv08abwDYGd77cxv980asdfy98zxc87
 export WILD_APRICOT_SSO_CLIENT_ID=654628fgDFc68hH
 export WILD_APRICOT_SSO_CLIENT_SECRET=07pb835b7pw3s8r0qrvmtlipuwjtt6
 export WILD_APRICOT_SSO_REDIRECT_URI=https://dingus.hackpgh.org/web-ui/home
-#export WILD_APRICOT_SSO_REDIRECT_URI=https://localhost/web-ui/home
 export LOG_LEVEL=INFO
 export COOKIE_STORE_SECRET=cookiestoresecret
 export CGO_ENABLED=1

@@ -3,16 +3,17 @@
 package setup
 
 import (
+	"rfid-backend/config"
 	"rfid-backend/services"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-func StartBackgroundDatabaseUpdate(waService *services.WildApricotService, dbService *services.DBService, logger *logrus.Logger) {
+func StartBackgroundDatabaseUpdate(waService *services.WildApricotService, dbService *services.DBService, cfg *config.Config, logger *logrus.Logger) {
 	go func() {
 		updateEntireDatabaseFromWildApricot(waService, dbService, logger)
-		ticker := time.NewTicker(30 * time.Minute)
+		ticker := time.NewTicker(time.Duration(cfg.PollTimeMins) * time.Minute)
 		for range ticker.C {
 			updateEntireDatabaseFromWildApricot(waService, dbService, logger)
 		}

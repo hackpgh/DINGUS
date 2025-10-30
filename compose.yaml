@@ -1,5 +1,6 @@
+name: dingus
 services:
-  dingus-server:
+  server:
     build: .
     ports:
       - "443:443"

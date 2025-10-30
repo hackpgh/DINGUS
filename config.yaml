@@ -5,3 +5,4 @@ key_file: key.pem
 tag_id_field_name: Door Key
 training_field_name: Safety Training
 wild_apricot_account_id: 232582
+poll_time_mins: 1

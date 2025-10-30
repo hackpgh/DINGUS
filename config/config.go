@@ -18,17 +18,18 @@ var (
 )
 
 type Config struct {
-	CertFile                string `mapstructure:"cert_file" json:"cert_file"`
-	DatabasePath            string `mapstructure:"database_path" json:"database_path"`
-	KeyFile                 string `mapstructure:"key_file" json:"key_file"`
-	TagIdFieldName          string `mapstructure:"tag_id_field_name" json:"tag_id_field_name"`
-	TrainingFieldName       string `mapstructure:"training_field_name" json:"training_field_name"`
-	WildApricotAccountId    int    `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
-	ContactFilterQuery      string `mapstructure:"contact_filter_query" json:"contact_filter_query"`
-	SSOClientID             string `mapstructure:"sso_client_id" json:"sso_client_id"`
-	SSOClientSecret         string `mapstructure:"sso_client_secret" json:"sso_client_secret"`
-	SSORedirectURI          string `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
-	CookieStoreSecret       string `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
+	CertFile                string  `mapstructure:"cert_file" json:"cert_file"`
+	DatabasePath            string  `mapstructure:"database_path" json:"database_path"`
+	KeyFile                 string  `mapstructure:"key_file" json:"key_file"`
+	TagIdFieldName          string  `mapstructure:"tag_id_field_name" json:"tag_id_field_name"`
+	TrainingFieldName       string  `mapstructure:"training_field_name" json:"training_field_name"`
+	WildApricotAccountId    int     `mapstructure:"wild_apricot_account_id" json:"wild_apricot_account_id"`
+	ContactFilterQuery      string  `mapstructure:"contact_filter_query" json:"contact_filter_query"`
+	SSOClientID             string  `mapstructure:"sso_client_id" json:"sso_client_id"`
+	SSOClientSecret         string  `mapstructure:"sso_client_secret" json:"sso_client_secret"`
+	SSORedirectURI          string  `mapstructure:"sso_redirect_uri" json:"sso_redirect_uri"`
+	CookieStoreSecret       string  `mapstructure:"cookie_store_secret" json:"cookie_store_secret"`
+	PollTimeMins            float32 `mapstructure:"poll_time_mins" json:"poll_time_mins" default:"5.0"`
 	WildApricotApiKey       string
 	WildApricotWebhookToken string
 	RFIDFieldName           string
@@ -60,9 +61,15 @@ func loadConfig() interface{} {
 	}
 
 	var cfg Config
+
+	// Set default values
+	cfg.PollTimeMins = 10.0
+
 	if err := viper.Unmarshal(&cfg); err != nil {
 		log.Fatalf("Error unmarshalling config file: %s", err)
 	}
+
+	log.Printf("poll_time_mins: %.1f", cfg.PollTimeMins)
 
 	// Resolve relative paths
 	cfg.CertFile = filepath.Join(projectRoot, cfg.CertFile)

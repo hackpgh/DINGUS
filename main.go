@@ -88,7 +88,7 @@ func main() {
 	waService := services.NewWildApricotService(cfg, logger)
 	dbService := services.NewDBService(db, cfg, logger)
 
-	setup.StartBackgroundDatabaseUpdate(waService, dbService, logger)
+	setup.StartBackgroundDatabaseUpdate(waService, dbService, cfg, logger)
 
 	err = router.RunTLS(":443", cfg.CertFile, cfg.KeyFile)
 	if err != nil {
